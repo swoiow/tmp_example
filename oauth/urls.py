@@ -25,5 +25,5 @@ urlpatterns = [
 
 urlpatterns += [
     url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    url(r'^v1/', include('sso.urls'))
+    url(r'^v1/', include('cas.urls'))
 ]
