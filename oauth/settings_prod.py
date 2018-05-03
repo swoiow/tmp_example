@@ -1,10 +1,10 @@
-import os
+from .settings import *
 
 SECRET_KEY = os.urandom(32)
 
 DEBUG = False
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["*"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {

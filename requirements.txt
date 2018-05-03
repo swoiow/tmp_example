@@ -1,4 +1,3 @@
-flask
 Django
 django-oauth-toolkit
 simplejson
