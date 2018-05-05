@@ -13,6 +13,9 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
+import django.views
+from django.conf import settings
 from django.conf.urls import include, url
 from django.contrib import admin
 from django.urls import path
@@ -22,6 +25,7 @@ from cas import views as cas_view
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', admin.site.urls),
+    url(r'^static/(?P<path>.*)$', django.views.static.serve, {'document_root': settings.STATIC_ROOT}),
 ]
 
 urlpatterns += [
