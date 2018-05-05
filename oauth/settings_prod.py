@@ -4,7 +4,7 @@ SECRET_KEY = os.urandom(32)
 
 DEBUG = False
 
-ALLOWED_HOSTS = ["127.0.0.1", "*"]
+ALLOWED_HOSTS = ["*"]
 
 AUTH_PASSWORD_VALIDATORS = [
     {

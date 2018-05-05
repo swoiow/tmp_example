@@ -17,13 +17,15 @@ from django.conf.urls import include, url
 from django.contrib import admin
 from django.urls import path
 
+from cas import views as cas_view
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('accounts/', admin.site.urls),
-
 ]
 
 urlpatterns += [
     url(r'^o/', include('oauth2_provider.urls', namespace='oauth2_provider')),
-    url(r'^v1/', include('cas.urls'))
+    url(r'^index|/?', cas_view.index),
+    url(r'^v1/', include('cas.urls')),
 ]

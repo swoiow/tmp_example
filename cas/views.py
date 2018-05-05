@@ -1,7 +1,12 @@
 import simplejson
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponse
+from django.shortcuts import render
 from oauth2_provider.views.generic import ProtectedResourceView
+
+
+def index(request):
+    return render(request, "cas_index.html")
 
 
 class ApiEndpoint(LoginView, ProtectedResourceView):
