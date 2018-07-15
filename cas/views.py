@@ -9,6 +9,13 @@ def index(request):
     return render(request, "cas_index.html")
 
 
+def nginx_auth(request):
+    if not request.user.is_authenticated:
+        return HttpResponse("Unauthorized", status=401)
+    else:
+        return HttpResponse(request.user.username, status=200)
+
+
 class ApiEndpoint(LoginView, ProtectedResourceView):
     def get(self, request, *args, **kwargs):
         if request.resource_owner.is_authenticated:
