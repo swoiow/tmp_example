@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login</title>
+
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+</head>
+<body>
+{% load i18n static %}
+<el-row type="flex" justify="center" align="middle">
+    <el-col :span="6"><div/></el-col>
+    <el-col :span="6">
+        <div id="app">
+            <el-form label-position="left" label-width="80px" :model="formLabelAlign">
+                <el-form-item label="UserName">
+                    <el-input v-model="formLabelAlign.name"></el-input>
+                </el-form-item>
+                <el-form-item label="PassWord">
+                    <el-input v-model="formLabelAlign.region"></el-input>
+                </el-form-item>
+                <el-form-item label="Captcha">
+                    <el-input v-model="formLabelAlign.captcha"></el-input>
+                </el-form-item>
+
+                <el-form-item>
+                    <el-button type="primary" @click="submitForm('ruleForm2')">Submit</el-button>
+                </el-form-item>
+            </el-form>
+        </div>
+    </el-col>
+    <el-col :span="6"><div/></el-col>
+
+</el-row>
+
+
+<div id="content-main" hidden>
+    <form action="{{ app_path }}" method="post" id="login-form">{% csrf_token %}
+        <div class="form-row">
+            {{ form.username.errors }}
+            {{ form.username.label_tag }} {{ form.username }}
+        </div>
+        <div class="form-row">
+            {{ form.password.errors }}
+            {{ form.password.label_tag }} {{ form.password }}
+            <input type="hidden" name="next" value="{{ next }}"/>
+        </div>
+        {% url 'admin_password_reset' as password_reset_url %}
+        {% if password_reset_url %}
+            <div class="password-reset-link">
+                <a href="{{ password_reset_url }}">{% trans 'Forgotten your password or username?' %}</a>
+            </div>
+        {% endif %}
+        <div class="submit-row">
+            <label>&nbsp;</label><input type="submit" value="{% trans 'Log in' %}"/>
+        </div>
+    </form>
+
+</div>
+
+<div hidden>
+    <!-- import Vue before Element -->
+    <script src="https://unpkg.com/vue/dist/vue.js"></script>
+    <!-- import JavaScript -->
+    <script src="https://unpkg.com/element-ui/lib/index.js"></script>
+
+    <script>
+        var Main = {
+            data() {
+                return {
+                    labelPosition: 'right',
+                    formLabelAlign: {
+                        name: '',
+                        region: '',
+                        type: '',
+                        captcha: '',
+                        csrf: '{{ csrf_token }}'
+                    }
+                };
+            },
+            methods: {
+                submitForm(formName) {
+                    this.$refs[formName].validate((valid) => {
+                        if (valid) {
+                            alert('submit!');
+                        } else {
+                            console.log('error submit!!');
+                            return false;
+                        }
+                    });
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        }
+        var Ctor = Vue.extend(Main)
+        new Ctor().$mount('#app')
+    </script>
+</div>
+</body>
+
+</html>
