@@ -22,14 +22,12 @@ from django.urls import path
 from cas import views as cas_view
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('accounts/', admin.site.urls),
+    path('adm/', admin.site.urls, name="adm"),
     url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
 ]
 
 urlpatterns += [
     url(r'^cas/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^v1/', include('cas.urls')),
-    url(r'^index$', cas_view.index),
-    url(r'', cas_view.index),
+    url(r'^(index|)+$', cas_view.index),
 ]
