@@ -1,133 +1,111 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>容器管理</title>
+{% extends "vue_framework.html" %}
 
+{% block title %} 容器管理 {% endblock %}
+
+{% block css %}
     <link rel="stylesheet" href="https://unpkg.com/typo.css@2.1.2/typo.css"/>
-    <link rel="stylesheet" href="https://unpkg.com/element-ui@2.4.9/lib/theme-chalk/index.css"/>
-    <meta name="referrer" content="strict-origin-when-cross-origin">
-</head>
+{% endblock %}
 
-<body>
+{% block body %}
 
-<div id="app">
-    <el-row type="flex" justify="space-around" align="middle">
-        <el-col :span="6">
-            <h2 class="typo-h2">容器管理</h2>
-        </el-col>
-        <el-col :span="6">
+    <div id="app">
+        <el-row type="flex" justify="space-around" align="middle">
+            <el-col :span="6">
+                <h2 class="typo-h2">容器管理</h2>
+            </el-col>
+            <el-col :span="6">
             <span class="typo-span">当前用户:
                 <a href="/adm/logout" title="click to logout"> {{ user }} </a>
             </span>
 
-        </el-col>
-    </el-row>
-    <el-row>
-        <el-col :span="24">
-            <el-table
-                    :data="tableData"
-                    style="width: 100%">
-                <el-table-column
-                        prop="create"
-                        label="创建时间"
-                        width="120">
-                </el-table-column>
-                <el-table-column
-                        prop="container_id"
-                        label="容器ID"
-                        width="120">
-                </el-table-column>
-                <el-table-column
-                        prop="user"
-                        label="所属用户"
-                        width="100">
-                </el-table-column>
-                <el-table-column
-                        prop="pwd"
-                        label="密码"
-                        width="140">
-                </el-table-column>
-                <el-table-column
-                        prop="method"
-                        label="加密方式"
-                        width="120">
-                </el-table-column>
-                <el-table-column
-                        prop="port"
-                        label="端口"
-                        width="100">
-                </el-table-column>
-                <el-table-column
-                        prop="more_sec"
-                        label="安全强化"
-                        width="80">
-                </el-table-column>
-                <el-table-column
-                        prop="note"
-                        label="备注"
-                        width="140">
-                </el-table-column>
+            </el-col>
+        </el-row>
+        <el-row>
+            <el-col :span="24">
+                <el-table
+                        :data="tableData"
+                        style="width: 100%">
+                    <el-table-column
+                            prop="create"
+                            label="创建时间"
+                            width="120">
+                    </el-table-column>
+                    <el-table-column
+                            prop="container_id"
+                            label="容器ID"
+                            width="120">
+                    </el-table-column>
+                    <el-table-column
+                            prop="user"
+                            label="所属用户"
+                            width="100">
+                    </el-table-column>
+                    <el-table-column
+                            prop="pwd"
+                            label="密码"
+                            width="140">
+                    </el-table-column>
+                    <el-table-column
+                            prop="method"
+                            label="加密方式"
+                            width="120">
+                    </el-table-column>
+                    <el-table-column
+                            prop="port"
+                            label="端口"
+                            width="100">
+                    </el-table-column>
+                    <el-table-column
+                            prop="more_sec"
+                            label="安全强化"
+                            width="80">
+                    </el-table-column>
+                    <el-table-column
+                            prop="note"
+                            label="备注"
+                            width="140">
+                    </el-table-column>
 
-                <el-table-column label="操作">
-                    <template slot="header" slot-scope="slot">
-                        操作
-                        <el-button type="primary" size="mini" icon="el-icon-edit" @click="createOne" plain>
-                            创建容器
-                        </el-button>
-                        <el-button type="danger" size="mini" icon="el-icon-delete" @click="deleteAll" plain>
-                            重置我的容器
-                        </el-button>
-                    </template>
+                    <el-table-column label="操作">
+                        <template slot="header" slot-scope="slot">
+                            操作
+                            <el-button type="primary" size="mini" icon="el-icon-edit" @click="createOne" plain>
+                                创建容器
+                            </el-button>
+                            <el-button type="danger" size="mini" icon="el-icon-delete" @click="deleteAll" plain>
+                                重置我的容器
+                            </el-button>
+                        </template>
 
-                    <template slot-scope="scope">
-                        <el-button size="mini" type="danger" @click="goDelete(scope.row)">
-                            删除
-                        </el-button>
-                        <el-button size="mini" plain>
-                            转移
-                        </el-button>
-                        <el-button size="mini" plain>
-                            安全强化
-                        </el-button>
-                    </template>
-                </el-table-column>
-            </el-table>
-        </el-col>
-    </el-row>
-</div>
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="danger" @click="goDelete(scope.row)">
+                                删除
+                            </el-button>
+                            <el-button size="mini" @click="transfer(scope.row)" plain>
+                                转移
+                            </el-button>
+                            <el-button size="mini" plain>
+                                安全强化
+                            </el-button>
+                            <el-button size="mini" plain @click="openQR(scope.row)">
+                                二维码
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-col>
+        </el-row>
+    </div>
+{% endblock %}
 
-<div hidden>
-    <script src="https://unpkg.com/jquery@3.3.1/dist/jquery.slim.min.js" async></script>
-    <script src="https://unpkg.com/vue@2.5.17/dist/vue.js" async></script>
-    <script src="https://unpkg.com/element-ui@2.4.9/lib/index.js" async></script>
-    <script src="https://unpkg.com/axios@0.18.0/dist/axios.min.js" async></script>
-
+{% block js %}
     <script>
-        window.onload = function () {
-            axios.defaults.xsrfCookieName = "csrftoken";
-            axios.defaults.xsrfHeaderName = "X-CSRFToken";
-
-            axios.interceptors.response.use(function (response) {
-                if ("location1" in response.headers) {
-                    return window.location.href = response.headers.location1
-                } else {
-                    return response;
-                }
-            }, function (error) {
-                return Promise.reject(error);
-            });
-
-
-            var Ctor = Vue.extend(Main);
-            new Ctor().$mount('#app')
-        };
-
-
         let Main = {
+            el: '#app',
+
             data() {
                 return {
+                    ip: "{{ IP }}",
                     tableData: JSON.parse('{{ ds|safe }}'),
                     message: "{{ message }}"
                 }
@@ -137,18 +115,28 @@
                 if (vm.$data.message !== "False") {
                     this.$notify({
                         title: 'Tips',
-                        type: 'warning',
+                        type: 'info',
                         message: "{{ message }}",
                     });
                 }
             },
             methods: {
+                transfer: function (dom) {
+                    this.$prompt('转入的用户', '请输入', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                    }).then(({value}) => {
+                        axios.post(window.location.href,
+                            {"note": value, "action": "transfer", "usr": value, "id": dom.container_id}
+                        )
+                    })
+                },
                 createOne: function () {
                     this.$prompt('请输入备注', '提示', {
                         confirmButtonText: '确定',
                         cancelButtonText: '取消',
                     }).then(({value}) => {
-                        axios.post(window.location.href, {"note": value})
+                        axios.post(window.location.href, {"note": value, "action": "new"})
                     }).catch(() => {
                         this.$notify({
                             type: 'info',
@@ -167,13 +155,26 @@
                         });
                     }
                 },
+                openQR: function (dom) {
+                    let qr = new QRious({
+                        size: 150,
+                        value: "ss://" +
+                            btoa(dom.method + ":" + dom.pwd + "@" + this.$data.ip + ":" + dom.port) +
+                            "#" + dom.user,
+                    })
+                    this.$alert('<img src="' + qr.toDataURL('image/jpeg') + '" />', '二维码', {
+                        dangerouslyUseHTMLString: true
+                    });
+                    qr.canvas.parentNode.appendChild(qr.image);
+                },
                 deleteAll: function () {
                     axios.put(window.location.href)
                 },
             }
         }
 
+        window.onload = function () {
+            new Vue(Main)
+        }
     </script>
-</div>
-</body>
-</html>
+{% endblock %}
