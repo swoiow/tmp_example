@@ -11,6 +11,15 @@ import docker
 from redis import StrictRedis
 
 
+def get_docker_client() -> docker.client:
+    if "DOCKER_SOCK" in environ:
+        client = docker.DockerClient(base_url=environ["DOCKER_SOCK"])
+    else:
+        client = docker.from_env()
+
+    return client
+
+
 def random_seed(size=(10, 16)):
     seeds = string.ascii_uppercase + string.ascii_lowercase + string.digits
     size = random.randint(*size)
@@ -22,7 +31,7 @@ def random_port():
 
 
 def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/shadowsocks"):
-    client = docker.DockerClient(base_url=environ["DOCKER_SOCK"])
+    client = get_docker_client()
 
     if not pwd:
         pwd = random_seed()
@@ -98,6 +107,7 @@ class Web2DockerMiddleWare(object):
 
             for idx, r in enumerate(data):
                 o = js.loads(r)
+                self._mapping[o["container_id"]] = r
                 json_data.append(o)
 
         return json_data

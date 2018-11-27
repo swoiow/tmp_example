@@ -6,12 +6,21 @@ import json as js
 from os import environ
 
 import docker
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.views.generic import View
 
-from .docker_utils import Web2DockerMiddleWare, run_ss_server
+from .docker_utils import Web2DockerMiddleWare, get_docker_client, run_ss_server
+from .models import Billboard
+
+
+@login_required
+def show_billboard(request, post_id):
+    post = Billboard.objects.get(pk=post_id)
+    # post_content = str(post.content)
+    return render(request, "ss/billboard.html", context=dict(post=post, ))
 
 
 class SSAdm(LoginRequiredMixin, View):
@@ -19,18 +28,24 @@ class SSAdm(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         user = request.user
+        super_admin = user.is_superuser
         username = user.username
 
         o = Web2DockerMiddleWare(username)
-        if user.is_superuser:
+        if super_admin:
             data = o.get_all_containers()
         else:
             data = o.get_user_containers()
+
+        posts = Billboard.objects \
+                    .filter(status=Billboard.PUBLIC) \
+                    .order_by("created")[:3]
 
         ctx = {
             "IP": environ.get("server_ip", "127.0.0.1"),
             "user": username,
             "ds": js.dumps(data),
+            "billboard": list(posts.values()),
             "message": "msg_box" in request.session and request.session.pop("msg_box")
         }
 
@@ -39,11 +54,12 @@ class SSAdm(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
         fetch_request = js.loads(request.body.decode())
         user = request.user
+        super_admin = user.is_superuser
         username = user.username
 
         o = Web2DockerMiddleWare(username)
 
-        if fetch_request.get("action") == "transfer" and user.is_superuser:
+        if fetch_request.get("action") == "transfer" and super_admin:
             resp = o.transfer_container(fetch_request["usr"], fetch_request["id"])
 
             if resp:
@@ -51,7 +67,7 @@ class SSAdm(LoginRequiredMixin, View):
             else:
                 request.session['msg_box'] = "转移失败: 权限不够或用户(容器)不存在"
 
-        elif fetch_request.get("action") == "new" and (o.length < 2 or user.is_superuser):
+        elif fetch_request.get("action") == "new" and (o.length < 2 or super_admin):
             response = run_ss_server(username)
 
             if response:
@@ -110,24 +126,32 @@ class SSAdm(LoginRequiredMixin, View):
 
     def delete(self, request, *args, **kwargs):
         user = request.user
+        super_admin = user.is_superuser
         username = user.username
-
-        o = Web2DockerMiddleWare(username)
 
         if request.body:
             cid = js.loads(request.body.decode())["id"]
+            o = Web2DockerMiddleWare(username)
+
+            if super_admin:
+                o.get_all_containers()
+
+                # patch user
+                real_user = js.loads(o.mapping[cid])["user"]
+                o = Web2DockerMiddleWare(real_user)
 
             if o.has_container(cid):
                 try:
-                    client = docker.APIClient(base_url=environ["DOCKER_SOCK"])
-                    client.stop(cid)
+                    client = get_docker_client()
+
+                    container = client.containers.get(cid)
+                    container.stop()
 
                     request.session['msg_box'] = "已删除"
+                    o.remove_container_record(cid)
 
                 except docker.errors.NotFound:
                     request.session['msg_box'] = "容器不存在或已删除"
-
-                o.remove_container_record(cid)
 
         response = HttpResponse()
         response["Location1"] = "/ss"

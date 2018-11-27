@@ -7,8 +7,17 @@
 {% endblock %}
 
 {% block body %}
+    <div style="font-size: 8px; justify-content: space-around; display:flex; margin-top: 5px">
+        {% for post in billboard %}
+            <div>
+                <a href="{% url 'show_billboard' post_id=post.id %}" target="_blank">
+                    {{ post.created|date:"c" }} {{ post.title }}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
 
-    <div id="app">
+    <div id="content">
         <el-row type="flex" justify="space-around" align="middle">
             <el-col :span="6">
                 <h2 class="typo-h2">容器管理</h2>
@@ -17,9 +26,9 @@
             <span class="typo-span">当前用户:
                 <a href="/adm/logout" title="click to logout"> {{ user }} </a>
             </span>
-
             </el-col>
         </el-row>
+
         <el-row>
             <el-col :span="24">
                 <el-table
@@ -101,7 +110,7 @@
 {% block js %}
     <script>
         let Main = {
-            el: '#app',
+            el: '#content',
 
             data() {
                 return {
@@ -161,7 +170,7 @@
                         value: "ss://" +
                             btoa(dom.method + ":" + dom.pwd + "@" + this.$data.ip + ":" + dom.port) +
                             "#" + dom.user,
-                    })
+                    });
                     this.$alert('<img src="' + qr.toDataURL('image/jpeg') + '" />', '二维码', {
                         dangerouslyUseHTMLString: true
                     });
@@ -171,7 +180,7 @@
                     axios.put(window.location.href)
                 },
             }
-        }
+        };
 
         window.onload = function () {
             new Vue(Main)
