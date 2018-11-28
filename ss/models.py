@@ -37,4 +37,4 @@ class Billboard(models.Model):
 
 class DockerExtra(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    number = models.IntegerField(verbose_name="允许容器数量")
+    quota = models.IntegerField(verbose_name="允许容器数量", default=1)

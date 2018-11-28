@@ -19,8 +19,7 @@ from .models import Billboard
 @login_required
 def show_billboard(request, post_id):
     post = Billboard.objects.get(pk=post_id)
-    # post_content = str(post.content)
-    return render(request, "ss/billboard.html", context=dict(post=post, ))
+    return render(request, "ss/billboard.html", context=dict(post=post))
 
 
 class SSAdm(LoginRequiredMixin, View):
@@ -39,10 +38,10 @@ class SSAdm(LoginRequiredMixin, View):
 
         posts = Billboard.objects \
                     .filter(status=Billboard.PUBLIC) \
-                    .order_by("created")[:3]
+                    .order_by("-created")[:3]
 
         ctx = {
-            "IP": environ.get("server_ip", "127.0.0.1"),
+            "IP": environ.get("SERVER_IP", "127.0.0.1"),
             "user": username,
             "ds": js.dumps(data),
             "billboard": list(posts.values()),
@@ -67,7 +66,7 @@ class SSAdm(LoginRequiredMixin, View):
             else:
                 request.session['msg_box'] = "转移失败: 权限不够或用户(容器)不存在"
 
-        elif fetch_request.get("action") == "new" and (o.length < 2 or super_admin):
+        elif fetch_request.get("action") == "new" and (o.length < user.dockerextra.quota or super_admin):
             response = run_ss_server(username)
 
             if response:
@@ -90,7 +89,7 @@ class SSAdm(LoginRequiredMixin, View):
                 request.session['msg_box'] = "创建失败，请尝试删除所有容器"
 
         else:
-            request.session['msg_box'] = "未知指令或超出创建数量限制"
+            request.session['msg_box'] = "超出配额数量, 或指令不被接受"
 
         response = HttpResponse()
         response["Location1"] = "/ss"
@@ -100,18 +99,13 @@ class SSAdm(LoginRequiredMixin, View):
         user = request.user
         username = user.username
 
-        client = docker.APIClient(base_url=environ["DOCKER_SOCK"])
+        client = get_docker_client()
         o = Web2DockerMiddleWare(username)
 
-        try:
-            client.stop("ss_%s" % username)
-
-        except docker.errors.NotFound:
-            pass
-
-        for container in o.get_user_containers():
+        for record in o.get_user_containers():
             try:
-                client.stop(container["container_id"])
+                container = client.containers.get(record["container_id"])
+                container.stop()
 
             except docker.errors.NotFound:
                 pass
