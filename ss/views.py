@@ -19,6 +19,7 @@ from .models import Billboard
 @login_required
 def show_billboard(request, post_id):
     post = Billboard.objects.get(pk=post_id)
+    # post_content = post.content.replace("\r", "\n")
     return render(request, "ss/billboard.html", context=dict(post=post))
 
 
