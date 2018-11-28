@@ -1,0 +1,120 @@
+{% extends "vue_framework.html" %}
+
+{% block title %} 登入页 {% endblock %}
+
+{% block body %}
+    <div id="app">
+        <el-row type="flex" justify="center" align="middle">
+            <el-col :xs="20" :sm="18" :md="12" :lg="10" :offset="2"><h1>登入！</h1></el-col>
+        </el-row>
+
+        <el-row type="flex" justify="center" align="middle">
+            <el-col :xs="20" :sm="18" :md="12" :lg="9">
+                <el-form method="post"
+                         :model="loginForm"
+                         :rules="loginRules"
+                         :label-position="labelPosition"
+                         ref="loginForm"
+                         label-width="80 px">
+
+                    <el-form-item label="用户名" prop="username">
+                        <el-input type="text"
+                                  v-model="loginForm.username"
+                                  @keyup.enter.native="submitForm('loginForm')">
+                        </el-input>
+                    </el-form-item>
+
+                    <el-form-item label="密码" prop="password">
+                        <el-input type="password"
+                                  v-model="loginForm.password"
+                                  @keyup.enter.native="submitForm('loginForm')">
+
+                        </el-input>
+                    </el-form-item>
+
+                    <!--<el-form-item label="验证码" prop="captcha">-->
+                    <!--<el-input v-model="loginForm.captcha"></el-input>-->
+                    <!--</el-form-item>-->
+
+                    <el-form-item>
+                        <el-button type="primary" @click="submitForm('loginForm')">
+                            登入
+                        </el-button>
+                    </el-form-item>
+
+                </el-form>
+            </el-col>
+        </el-row>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let qs = function (params) {
+            return Object.keys(params).map(function (key) {
+                return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+            }).join("&");
+        };
+
+        let Main = {
+            el: '#app',
+            data() {
+                return {
+                    labelPosition: 'right',
+                    loginForm: {
+                        username: '',
+                        password: '',
+                        captcha: '',
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    loginRules: {
+                        username: [
+                            {required: true, message: "请输入用户名", trigger: 'blur'},
+                        ],
+                        password: [
+                            {required: true, message: "请输入密码", trigger: 'blur'},
+                        ],
+                        {#captcha: [#}
+                        {#    {required: true, message: "请输入验证码", trigger: 'blur'},#}
+                        {#]#}
+                    }
+                };
+            },
+            methods: {
+                submitForm(formName) {
+                    let vm = this;
+                    vm.$refs[formName].validate((valid) => {
+                        if (!valid) {
+                            this.$notify({
+                                title: '注意',
+                                type: 'error',
+                                message: "表单填写不正确!",
+                            });
+                            return false;
+                        } else {
+                            axios({
+                                method: 'post',
+                                url: '{{ app_path }}',
+                                headers: {
+                                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                                },
+                                data: qs(vm.$data.loginForm)
+                            })
+                                .then(function (response) {
+                                    window.location = '{{ app_path }}'
+                                })
+                        }
+                    });
+                },
+                resetForm(formName) {
+                    this.$refs[formName].resetFields();
+                }
+            }
+        }
+
+        window.onload = function () {
+            new Vue(Main)
+        }
+    </script>
+{% endblock %}

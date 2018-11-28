@@ -1,0 +1,5 @@
+Django
+django-oauth-toolkit
+simplejson
+redis
+docker

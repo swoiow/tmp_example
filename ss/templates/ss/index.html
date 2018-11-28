@@ -1,0 +1,189 @@
+{% extends "vue_framework.html" %}
+
+{% block title %} 容器管理 {% endblock %}
+
+{% block css %}
+    <link rel="stylesheet" href="https://unpkg.com/typo.css@2.1.2/typo.css"/>
+{% endblock %}
+
+{% block body %}
+    <div style="font-size: 8px; justify-content: space-around; display:flex; margin-top: 5px">
+        {% for post in billboard %}
+            <div>
+                <a href="{% url 'show_billboard' post_id=post.id %}" target="_blank">
+                    {{ post.created|date:"c" }} {{ post.title }}
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <div id="content">
+        <el-row type="flex" justify="space-around" align="middle">
+            <el-col :span="6">
+                <h2 class="typo-h2">容器管理</h2>
+            </el-col>
+            <el-col :span="6">
+            <span class="typo-span">当前用户:
+                <a href="/adm/logout" title="click to logout"> {{ user }} </a>
+            </span>
+            </el-col>
+        </el-row>
+
+        <el-row>
+            <el-col :span="24">
+                <el-table
+                        :data="tableData"
+                        style="width: 100%">
+                    <el-table-column
+                            prop="create"
+                            label="创建时间"
+                            width="120">
+                    </el-table-column>
+                    <el-table-column
+                            prop="container_id"
+                            label="容器ID"
+                            width="120">
+                    </el-table-column>
+                    <el-table-column
+                            prop="user"
+                            label="所属用户"
+                            width="100">
+                    </el-table-column>
+                    <el-table-column
+                            prop="pwd"
+                            label="密码"
+                            width="140">
+                    </el-table-column>
+                    <el-table-column
+                            prop="method"
+                            label="加密方式"
+                            width="120">
+                    </el-table-column>
+                    <el-table-column
+                            prop="port"
+                            label="端口"
+                            width="100">
+                    </el-table-column>
+                    <el-table-column
+                            prop="more_sec"
+                            label="安全强化"
+                            width="80">
+                    </el-table-column>
+                    <el-table-column
+                            prop="note"
+                            label="备注"
+                            width="140">
+                    </el-table-column>
+
+                    <el-table-column label="操作">
+                        <template slot="header" slot-scope="slot">
+                            操作
+                            <el-button type="primary" size="mini" icon="el-icon-edit" @click="createOne" plain>
+                                创建容器
+                            </el-button>
+                            <el-button type="danger" size="mini" icon="el-icon-delete" @click="deleteAll" plain>
+                                重置我的容器
+                            </el-button>
+                        </template>
+
+                        <template slot-scope="scope">
+                            <el-button size="mini" type="danger" @click="goDelete(scope.row)">
+                                删除
+                            </el-button>
+                            <el-button size="mini" @click="transfer(scope.row)" plain>
+                                转移
+                            </el-button>
+                            <el-button size="mini" plain>
+                                安全强化
+                            </el-button>
+                            <el-button size="mini" plain @click="openQR(scope.row)">
+                                二维码
+                            </el-button>
+                        </template>
+                    </el-table-column>
+                </el-table>
+            </el-col>
+        </el-row>
+    </div>
+{% endblock %}
+
+{% block js %}
+    <script>
+        let Main = {
+            el: '#content',
+
+            data() {
+                return {
+                    ip: "{{ IP }}",
+                    tableData: JSON.parse('{{ ds|safe }}'),
+                    message: "{{ message }}"
+                }
+            },
+            beforeMount() {
+                let vm = this;
+                if (vm.$data.message !== "False") {
+                    this.$notify({
+                        title: 'Tips',
+                        type: 'info',
+                        message: "{{ message }}",
+                    });
+                }
+            },
+            methods: {
+                transfer: function (dom) {
+                    this.$prompt('转入的用户', '请输入', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                    }).then(({value}) => {
+                        axios.post(window.location.href,
+                            {"note": value, "action": "transfer", "usr": value, "id": dom.container_id}
+                        )
+                    })
+                },
+                createOne: function () {
+                    this.$prompt('请输入备注', '提示', {
+                        confirmButtonText: '确定',
+                        cancelButtonText: '取消',
+                    }).then(({value}) => {
+                        axios.post(window.location.href, {"note": value, "action": "new"})
+                    }).catch(() => {
+                        this.$notify({
+                            type: 'info',
+                            message: '取消创建'
+                        });
+                    });
+                },
+                goDelete: function (dom) {
+                    if (dom.container_id) {
+                        axios.delete(window.location.href, {data: {"id": dom.container_id}})
+                    } else {
+                        this.$notify({
+                            title: 'Tips',
+                            type: 'error',
+                            message: "请求删除出错",
+                        });
+                    }
+                },
+                openQR: function (dom) {
+                    let qr = new QRious({
+                        size: 150,
+                        value: "ss://" +
+                            btoa(dom.method + ":" + dom.pwd + "@" + this.$data.ip + ":" + dom.port) +
+                            "#" + dom.user,
+                    });
+                    this.$alert('<img src="' + qr.toDataURL('image/jpeg') + '" />', '二维码', {
+                        dangerouslyUseHTMLString: true
+                    });
+                    qr.canvas.parentNode.appendChild(qr.image);
+                },
+                deleteAll: function () {
+                    axios.put(window.location.href)
+                },
+            }
+        };
+
+        window.onload = function () {
+            new Vue(Main)
+        }
+    </script>
+{% endblock %}
