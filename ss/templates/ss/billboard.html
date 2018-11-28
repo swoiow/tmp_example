@@ -89,6 +89,6 @@
 
 {% block js %}
     <script>
-        document.getElementById('post').innerHTML = marked("{{ post.content|linebreaks }}");
+        document.getElementById('post').innerHTML = marked("{{ post.content|escapejs }}");
     </script>
 {% endblock %}
