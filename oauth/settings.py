@@ -108,3 +108,10 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, "static")
+
+# Customer Config
+SESSION_COOKIE_NAME = "pvid"
+SESSION_COOKIE_SECURE = False
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
+LOGOUT_REDIRECT_URL = "/"

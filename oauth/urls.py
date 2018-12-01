@@ -19,6 +19,7 @@ from django.conf.urls import include, static, url
 from django.contrib import admin
 from django.urls import path
 
+from adm import views as adm_views
 from cas import views as cas_view
 
 
@@ -32,4 +33,5 @@ urlpatterns += [
     url(r'^v1/', include('cas.urls')),
     url(r'^(index|)+$', cas_view.index),
     url(r'^ss/', include('ss.urls')),
+    url(r"^join(/|)+$", adm_views.index, name="join")
 ]
