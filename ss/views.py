@@ -43,7 +43,10 @@ class SSAdm(LoginRequiredMixin, View):
 
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
-            "user": username,
+            "user": {
+                "name": username,
+                "is_admin": super_admin,
+            },
             "ds": js.dumps(data),
             "billboard": list(posts.values()),
             "message": "msg_box" in request.session and request.session.pop("msg_box")
@@ -59,7 +62,18 @@ class SSAdm(LoginRequiredMixin, View):
 
         o = Web2DockerMiddleWare(username)
 
-        if fetch_request.get("action") == "transfer" and super_admin:
+        if fetch_request.get("action") == "invite" and super_admin:
+            import uuid
+            from redis import StrictRedis
+
+            rds = StrictRedis(host=environ["REDIS"], socket_keepalive=10, db=1)
+
+            usr_id = str(uuid.uuid4())
+            rds.set(usr_id, value=js.dumps({"email": fetch_request["email"]}), ex=3 * 24 * 60 * 60)
+
+            request.session['msg_box'] = "记录成功: %s" % usr_id
+
+        elif fetch_request.get("action") == "transfer" and super_admin:
             resp = o.transfer_container(fetch_request["usr"], fetch_request["id"])
 
             if resp:
