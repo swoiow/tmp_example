@@ -39,7 +39,7 @@ class SSAdm(LoginRequiredMixin, View):
 
         posts = Billboard.objects \
                     .filter(status=Billboard.PUBLIC) \
-                    .order_by("-created")[:3]
+                    .order_by("-created")
 
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
