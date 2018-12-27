@@ -56,6 +56,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/
             command=command.format(pwd=pwd, lport=container_port, enc_mode=enc_mode, extra=extra),
 
             detach=True,
+            restart_policy={"Name": "always", "MaximumRetryCount": 5},
             # auto_remove=True,
             # remove=True,
             # network_mode="bridge",
