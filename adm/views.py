@@ -2,17 +2,29 @@
 # -*- coding: utf-8 -*-
 
 import json as js
-from os import environ
 
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.http import HttpResponse
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 from redis import StrictRedis
 
+from adm.apps import AdmConfig
+
+
+def smart_view(request, *args, **kwargs):
+    user = request.user
+    super_admin = user.is_superuser
+
+    if super_admin:
+        return HttpResponseRedirect(redirect_to="/adm")
+    else:
+        return HttpResponseRedirect(redirect_to="/ss")
+
 
 def index(request, *args, **kwargs):
-    rds = StrictRedis(host=environ["REDIS"], socket_keepalive=10, db=1)
+    rds = StrictRedis(host=AdmConfig.rds_host, port=AdmConfig.rds_port, socket_keepalive=10, db=1)
 
     if request.method == 'GET':
         req_uid = request.GET.get("uid")

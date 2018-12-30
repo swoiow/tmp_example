@@ -87,8 +87,12 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/
 class Web2DockerMiddleWare(object):
 
     def __init__(self, user):
+        info = environ["REDIS"].split(":")
+        _host = info[0]
+        _port = info[1] if len(info) > 1 else 6379
+
         self.user = user
-        self.rds = StrictRedis(host=environ["REDIS"], socket_keepalive=10)
+        self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10)
         self._mapping = {}  # {'cid': json.dumps()}
 
     @property

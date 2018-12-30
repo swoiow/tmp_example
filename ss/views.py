@@ -38,8 +38,8 @@ class SSAdm(LoginRequiredMixin, View):
             data = o.get_user_containers()
 
         posts = Billboard.objects \
-                    .filter(status=Billboard.PUBLIC) \
-                    .order_by("-created")
+            .filter(status=Billboard.PUBLIC) \
+            .order_by("-created")
 
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
@@ -66,7 +66,10 @@ class SSAdm(LoginRequiredMixin, View):
             import uuid
             from redis import StrictRedis
 
-            rds = StrictRedis(host=environ["REDIS"], socket_keepalive=10, db=1)
+            info = environ["REDIS"].split(":")
+            _host = info[0]
+            _port = info[1] if len(info) > 1 else 6379
+            rds = StrictRedis(host=_host, port=_port, db=1, socket_keepalive=10, socket_connect_timeout=10)
 
             usr_id = str(uuid.uuid4())
             rds.set(usr_id, value=js.dumps({"email": fetch_request["email"]}), ex=3 * 24 * 60 * 60)

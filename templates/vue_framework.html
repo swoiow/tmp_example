@@ -25,19 +25,19 @@
         <script src="https://unpkg.com/axios@0.18.0/dist/axios.min.js"
                 integrity="sha384-U/+EF1mNzvy5eahP9DeB32duTkAmXrePwnRWtuSh1C/bHHhyR1KZCr/aGZBkctpY"
                 crossorigin="anonymous"
-                ></script>
+        ></script>
         <script src="https://unpkg.com/jquery@3.3.1/dist/jquery.slim.min.js"
                 integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo"
-                crossorigin="anonymous" 
-                ></script>
+                crossorigin="anonymous"
+        ></script>
         <script src="https://unpkg.com/vue@2.5.17/dist/vue.min.js"
                 integrity="sha384-9MzmvphdUvLZJKasjD7VqYE4SqffhZDOwDTMyokP2tx+fjBo59ljvrlgUAaaME44"
                 crossorigin="anonymous"
-                ></script>
+        ></script>
         <script src="https://unpkg.com/element-ui@2.4.9/lib/index.js"
                 integrity="sha384-WX1WG5odX3Ny1f1xOsz1/jS3uqDUHKpubp7DrUKyAmODL7dxkbZ5DbhDVAqDE1Jy"
                 crossorigin="anonymous"
-                ></script>
+        ></script>
 
         <script defer>
             axios.defaults.xsrfCookieName = "csrftoken";
@@ -52,7 +52,9 @@
             }, function (error) {
                 return Promise.reject(error);
             });
+
         </script>
+
     {% endblock %}
 
     {% block js %}

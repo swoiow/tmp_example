@@ -22,7 +22,6 @@ from django.urls import path
 from adm import views as adm_views
 from cas import views as cas_view
 
-
 urlpatterns = [
     path('adm/', admin.site.urls, name="adm"),
     url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
