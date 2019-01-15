@@ -9,5 +9,5 @@ from . import views
 
 urlpatterns = [
     path("helper/<int:post_id>", views.show_billboard, name="show_billboard"),
-    url(r'^$', views.SSAdm.as_view()),
+    url(r'^$', views.SSAdm.as_view(), name="ss_adm"),
 ]

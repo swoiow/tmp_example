@@ -84,6 +84,19 @@ class SSAdm(LoginRequiredMixin, View):
             else:
                 request.session['msg_box'] = "转移失败: 权限不够或用户(容器)不存在"
 
+        elif fetch_request.get("action") == "restore":
+            c_id = fetch_request["id"]
+            lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
+            response = run_ss_server(username, pwd=lost_container["pwd"], port=lost_container["port"])
+
+            if response:
+                lost_container["container_id"] = response.short_id
+                lost_container["create"] = dt.datetime.today().strftime("%Y-%m-%d")
+
+                o.add_container(lost_container)
+                o.remove_container_record(c_id)
+                request.session['msg_box'] = "还原成功"
+
         elif fetch_request.get("action") == "new" and (o.length < user.dockerextra.quota or super_admin):
             response = run_ss_server(username)
 

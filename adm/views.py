@@ -3,10 +3,8 @@
 
 import json as js
 
-from django.conf import settings
 from django.contrib.auth.models import User
-from django.http import HttpResponse
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, render
 from redis import StrictRedis
 
@@ -49,6 +47,6 @@ def index(request, *args, **kwargs):
         if User.objects.filter(username=usr).count() >= 1:
             rds.delete(req_uid)
 
-        return redirect('%s?next=/ss' % settings.LOGIN_URL)
+        return redirect('/adm')
 
     return HttpResponse(status=403)

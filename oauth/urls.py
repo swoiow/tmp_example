@@ -18,12 +18,15 @@ from django.conf import settings
 from django.conf.urls import include, static, url
 from django.contrib import admin
 from django.urls import path
+from django.views.generic.base import RedirectView
 
 from adm import views as adm_views
 from cas import views as cas_view
 
+
 urlpatterns = [
     path('adm/', admin.site.urls, name="adm"),
+    url(r'^accounts/profile/$', RedirectView.as_view(url="/ss", permanent=True)),
     url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
 ]
 

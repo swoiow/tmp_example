@@ -40,12 +40,20 @@
         ></script>
 
         <script defer>
+            let qs = function (params) {
+                return Object.keys(params).map(function (key) {
+                    return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
+                }).join("&");
+            };
+
             axios.defaults.xsrfCookieName = "csrftoken";
             axios.defaults.xsrfHeaderName = "X-CSRFToken";
 
             axios.interceptors.response.use(function (response) {
                 if ("location1" in response.headers) {
-                    return window.location.href = response.headers.location1
+                    return window.location.href = response.headers.location1;
+                } else if ("location" in response.headers) {
+                    return window.location.href = response.headers.location;
                 } else {
                     return response;
                 }

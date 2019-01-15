@@ -10,25 +10,25 @@
             <el-row :gutter="20">
                 <el-col :span="12" :offset="5">
                     <el-form :model="ruleForm2" status-icon :rules="rules2" ref="ruleForm2" label-width="100px"
-                             class="demo-ruleForm" method="post" action="">
+                             class="demo-ruleForm">
                         {% csrf_token %}
-                        <el-form-item label="用户名" prop="username">
-                            <el-input v-model="ruleForm2.username" name="usr"></el-input>
+                        <el-form-item label="用户名" prop="usr">
+                            <el-input v-model="ruleForm2.usr" name="usr"></el-input>
                         </el-form-item>
                         <el-form-item label="邮箱" prop="email">
                             <el-input v-model="ruleForm2.email" disabled></el-input>
                         </el-form-item>
-                        <el-form-item label="密码" prop="pass">
+                        <el-form-item label="密码" prop="pwd">
 
-                            <el-input type="password" v-model="ruleForm2.pass" name="pwd" autocomplete="off"></el-input>
+                            <el-input type="password" v-model="ruleForm2.pwd" name="pwd" autocomplete="off"></el-input>
                         </el-form-item>
                         <el-form-item label="确认密码" prop="checkPass">
                             <el-input type="password" v-model="ruleForm2.checkPass" autocomplete="off"></el-input>
                         </el-form-item>
 
                         <el-form-item>
-                            {#                            <el-button type="primary" @click="submitForm('ruleForm2')">提交</el-button>#}
-                            <el-button type="primary" native-type='submit'>提交</el-button>
+                            <el-button type="primary" @click="submitForm('ruleForm2')">提交</el-button>
+                            {#                            <el-button type="primary" native-type='submit'>提交</el-button>#}
                             <el-button @click="resetForm('ruleForm2')">重置</el-button>
                         </el-form-item>
                     </el-form>
@@ -46,7 +46,7 @@
             el: '#app',
 
             data() {
-                var checkAge = (rule, value, callback) => {
+                var checkUsr = (rule, value, callback) => {
                     if (!value) {
                         return callback(new Error('用户名不能为空'));
                     }
@@ -65,7 +65,7 @@
                 var validatePass2 = (rule, value, callback) => {
                     if (value === '') {
                         callback(new Error('请再次输入密码'));
-                    } else if (value !== this.ruleForm2.pass) {
+                    } else if (value !== this.ruleForm2.pwd) {
                         callback(new Error('两次输入密码不一致!'));
                     } else {
                         callback();
@@ -73,8 +73,8 @@
                 };
                 return {
                     ruleForm2: {
-                        username: '',
-                        pass: '',
+                        usr: '',
+                        pwd: '',
                         checkPass: '',
                         email: "{{ email }}",
                     },
@@ -86,18 +86,34 @@
                             {validator: validatePass2, trigger: 'blur'}
                         ],
                         username: [
-                            {validator: checkAge, trigger: 'blur'}
+                            {validator: checkUsr, trigger: 'blur'}
                         ]
                     }
                 };
             },
             methods: {
                 submitForm(formName) {
-                    this.$refs[formName].validate((valid) => {
+                    let vm = this;
+                    vm.$refs[formName].validate((valid) => {
                         if (valid) {
-                            alert('submit!');
+                            axios({
+                                method: 'post',
+                                url: window.location.href,
+                                headers: {
+                                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                                },
+                                data: qs(vm.$data.ruleForm2)
+                            })
+                                .then(function (response) {
+                                    return window.location.href = response.request.responseURL
+                                })
                         } else {
-                            console.log('error submit!!');
+                            vm.$notify({
+                                title: '注意',
+                                type: 'error',
+                                message: "请检查表单!",
+                            });
                             return false;
                         }
                     });
@@ -106,7 +122,7 @@
                     this.$refs[formName].resetFields();
                 }
             }
-        }
+        };
         window.onload = function () {
             new Vue(Main)
         }

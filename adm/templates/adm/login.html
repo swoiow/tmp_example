@@ -50,12 +50,6 @@
 
 {% block js %}
     <script>
-        let qs = function (params) {
-            return Object.keys(params).map(function (key) {
-                return encodeURIComponent(key) + "=" + encodeURIComponent(params[key]);
-            }).join("&");
-        };
-
         let Main = {
             el: '#app',
             data() {
@@ -102,7 +96,7 @@
                                 data: qs(vm.$data.loginForm)
                             })
                                 .then(function (response) {
-                                    window.location = '{{ app_path }}'
+                                    return window.location.href = response.request.responseURL
                                 })
                         }
                     });
@@ -111,7 +105,7 @@
                     this.$refs[formName].resetFields();
                 }
             }
-        }
+        };
 
         window.onload = function () {
             new Vue(Main)

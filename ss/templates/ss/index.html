@@ -102,6 +102,10 @@
                                     <el-button size="mini" type="danger" @click="goDelete(scope.row)">
                                         删除
                                     </el-button>
+
+                                    <el-button size="mini" type="normal" @click="goRestore(scope.row)">
+                                        还原
+                                    </el-button>
                                     <el-button size="mini" @click="transfer(scope.row)" plain>
                                         转移
                                     </el-button>
@@ -125,7 +129,9 @@
 {% endblock %}
 
 {% block js %}
-    <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js" integrity="sha384-Dr98ddmUw2QkdCarNQ+OL7xLty7cSxgR0T7v1tq4UErS/qLV0132sBYTolRAFuOV" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/qrious@4.0.2/dist/qrious.min.js"
+            integrity="sha384-Dr98ddmUw2QkdCarNQ+OL7xLty7cSxgR0T7v1tq4UErS/qLV0132sBYTolRAFuOV"
+            crossorigin="anonymous"></script>
     <script>
         let Main = {
             el: '#content',
@@ -184,6 +190,17 @@
                 goDelete: function (dom) {
                     if (dom.container_id) {
                         axios.delete(window.location.href, {data: {"id": dom.container_id}})
+                    } else {
+                        this.$notify({
+                            title: 'Tips',
+                            type: 'error',
+                            message: "请求删除出错",
+                        });
+                    }
+                },
+                goRestore: function (dom) {
+                    if (dom.container_id) {
+                        axios.post(window.location.href,  {"id": dom.container_id, "action": "restore"})
                     } else {
                         this.$notify({
                             title: 'Tips',
