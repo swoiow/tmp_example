@@ -58,7 +58,7 @@
                             </el-table-column>
                             <el-table-column
                                     prop="user"
-                                    label="所属用户"
+                                    label="拥有者"
                                     width="100">
                             </el-table-column>
                             <el-table-column
@@ -91,10 +91,10 @@
                                 <template slot="header" slot-scope="slot">
                                     操作
                                     <el-button type="primary" size="mini" icon="el-icon-edit" @click="createOne" plain>
-                                        创建容器
+                                        新建
                                     </el-button>
                                     <el-button type="danger" size="mini" icon="el-icon-delete" @click="deleteAll" plain>
-                                        重置我的容器
+                                        重置所有
                                     </el-button>
                                 </template>
 
@@ -102,16 +102,17 @@
                                     <el-button size="mini" type="danger" @click="goDelete(scope.row)">
                                         删除
                                     </el-button>
-
-                                    <el-button size="mini" type="normal" @click="goRestore(scope.row)">
-                                        还原
-                                    </el-button>
-                                    <el-button size="mini" @click="transfer(scope.row)" plain>
-                                        转移
-                                    </el-button>
-                                    <el-button size="mini" plain>
-                                        安全强化
-                                    </el-button>
+                                    {% if user.is_admin %}
+                                        <el-button size="mini" type="normal" @click="goRestore(scope.row)">
+                                            还原
+                                        </el-button>
+                                        <el-button size="mini" @click="transfer(scope.row)" plain>
+                                            转移
+                                        </el-button>
+                                        <el-button size="mini" plain>
+                                            安全强化
+                                        </el-button>
+                                    {% endif %}
                                     <el-button size="mini" plain @click="openQR(scope.row)">
                                         二维码
                                     </el-button>
@@ -200,7 +201,7 @@
                 },
                 goRestore: function (dom) {
                     if (dom.container_id) {
-                        axios.post(window.location.href,  {"id": dom.container_id, "action": "restore"})
+                        axios.post(window.location.href, {"id": dom.container_id, "action": "restore"})
                     } else {
                         this.$notify({
                             title: 'Tips',
@@ -219,7 +220,6 @@
                     this.$alert('<img src="' + qr.toDataURL('image/jpeg') + '" />', '二维码', {
                         dangerouslyUseHTMLString: true
                     });
-                    qr.canvas.parentNode.appendChild(qr.image);
                 },
                 deleteAll: function () {
                     axios.put(window.location.href)
