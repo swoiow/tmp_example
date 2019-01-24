@@ -86,6 +86,14 @@ class SSAdm(LoginRequiredMixin, View):
 
         elif fetch_request.get("action") == "restore":
             c_id = fetch_request["id"]
+
+            if super_admin:
+                o.get_all_containers()
+
+                # patch user
+                real_user = js.loads(o.mapping[c_id])["user"]
+                o = Web2DockerMiddleWare(real_user)
+
             lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
             response = run_ss_server(username, pwd=lost_container["pwd"], port=lost_container["port"])
 
