@@ -27,7 +27,7 @@ def random_seed(size=(10, 16)):
 
 
 def random_port():
-    return random.randint(10000, 63300)
+    return random.randint(30000, 63300)
 
 
 def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/shadowsocks"):
