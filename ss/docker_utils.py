@@ -20,7 +20,7 @@ def get_docker_client() -> docker.client:
     return client
 
 
-def random_seed(size=(10, 16)):
+def random_seed(size=(20, 32)):
     seeds = string.ascii_uppercase + string.ascii_lowercase + string.digits
     size = random.randint(*size)
     return "".join(random.choice(seeds) for x in range(size))
@@ -30,7 +30,7 @@ def random_port():
     return random.randint(30000, 63300)
 
 
-def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/shadowsocks"):
+def run_ss_server(name, pwd=None, port=None, enc_mode="aes-192-cfb", img="pylab/shadowsocks"):
     client = get_docker_client()
 
     if not pwd:
