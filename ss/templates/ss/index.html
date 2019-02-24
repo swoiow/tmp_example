@@ -90,7 +90,8 @@
                             <el-table-column label="操作">
                                 <template slot="header" slot-scope="slot">
                                     操作
-                                    <el-button type="primary" size="mini" icon="el-icon-edit" @click="createOne" plain>
+                                    <el-button type="primary" size="mini" icon="el-icon-edit" @click="createOne(0)"
+                                               plain>
                                         新建
                                     </el-button>
                                     <el-button type="danger" size="mini" icon="el-icon-delete" @click="deleteAll" plain>
@@ -125,6 +126,27 @@
                 </el-container>
             </el-container>
         </el-container>
+
+        <el-dialog title="正在创建新容器" :visible.sync="cFormVisible">
+            <el-form :model="cform">
+                <el-form-item label="备注" label-width="80px">
+                    <el-input v-model="cform.note" autocomplete="off"></el-input>
+                </el-form-item>
+                <el-form-item label="加密方式" label-width="80px">
+                    <el-select v-model="cform.enc"
+                               placeholder="默认：aes-256-cfb"
+                               no-data-text="aes-256-cfb"
+                    >
+                        <el-option v-for="item in encrypt_method" :key="item" :value="item" :label="item">
+                        </el-option>
+                    </el-select>
+                </el-form-item>
+            </el-form>
+            <div slot="footer" class="dialog-footer">
+                <el-button @click="cFormVisible = false">取 消</el-button>
+                <el-button type="primary" @click="createOne(1)">确 定</el-button>
+            </div>
+        </el-dialog>
     </div>
 
 {% endblock %}
@@ -139,9 +161,12 @@
 
             data() {
                 return {
+                    encrypt_method: [null, "rc4-md5", "aes-128-gcm", "aes-192-gcm", "aes-256-gcm", "aes-128-cfb", "aes-192-cfb", "aes-256-cfb", "aes-128-ctr", "aes-192-ctr", "aes-256-ctr", "camellia-128-cfb", "camellia-192-cfb", "camellia-256-cfb", "bf-cfb", "chacha20-ietf-poly1305", "xchacha20-ietf-poly1305", "salsa20", "chacha20", "chacha20-ietf",],
                     ip: "{{ IP }}",
                     tableData: JSON.parse('{{ ds|safe }}'),
-                    message: "{{ message }}"
+                    message: "{{ message }}",
+                    cFormVisible: false,
+                    cform: {},
                 }
             },
             beforeMount() {
@@ -175,18 +200,18 @@
                         )
                     })
                 },
-                createOne: function () {
-                    this.$prompt('请输入备注', '提示', {
-                        confirmButtonText: '确定',
-                        cancelButtonText: '取消',
-                    }).then(({value}) => {
-                        axios.post(window.location.href, {"note": value, "action": "new"})
-                    }).catch(() => {
-                        this.$notify({
-                            type: 'info',
-                            message: '取消创建'
-                        });
-                    });
+                createOne: function (c) {
+                    let vm = this;
+                    if (c) {
+                        this.$data.cFormVisible = false;
+                        axios.post(window.location.href, {
+                            "action": "new",
+                            "note": vm.$data.cform.note,
+                            "enc": vm.$data.cform.enc,
+                        })
+                    } else {
+                        this.$data.cFormVisible = true
+                    }
                 },
                 goDelete: function (dom) {
                     if (dom.container_id) {

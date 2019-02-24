@@ -106,7 +106,10 @@ class SSAdm(LoginRequiredMixin, View):
                 request.session['msg_box'] = "还原成功"
 
         elif fetch_request.get("action") == "new" and (o.length < user.dockerextra.quota or super_admin):
-            response = run_ss_server(username)
+            kw = {}
+            if fetch_request.get("enc"):
+                kw["enc_mode"] = fetch_request["enc"]
+            response = run_ss_server(username, **kw)
 
             if response:
                 td = dt.datetime.today().strftime("%Y-%m-%d")

@@ -30,7 +30,7 @@ def random_port():
     return random.randint(30000, 63300)
 
 
-def run_ss_server(name, pwd=None, port=None, enc_mode="aes-192-cfb", img="pylab/shadowsocks"):
+def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/shadowsocks"):
     client = get_docker_client()
 
     if not pwd:
