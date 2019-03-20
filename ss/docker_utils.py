@@ -45,7 +45,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/
         rport = port
 
     container_port = random_port()
-    extra = "-u -6 --fast-open --reuse-port -t 80"
+    extra = "-u --fast-open --reuse-port -t 80"
 
     img_name = img
     command = "ss-server -s 0.0.0.0 -p {lport} -k {pwd} -m {enc_mode} {extra}"
