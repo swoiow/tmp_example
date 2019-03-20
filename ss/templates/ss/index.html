@@ -7,7 +7,12 @@
 {% endblock %}
 
 {% block body %}
-    <div id="content">
+    <div id="content"
+         v-loading="loading"
+         element-loading-text="拼命加载中"
+         element-loading-spinner="el-icon-loading"
+         element-loading-background="rgba(0, 0, 0, 0.8)"
+    >
         <el-container style="min-height: 450px;border: 1px solid #eee">
             <el-header>
                 <el-row type="flex" justify="space-around" align="middle">
@@ -42,6 +47,7 @@
                         <el-button @click="emailInvite">邀请注册</el-button>
                     {% endif %}
                 </el-aside>
+
                 <el-container>
                     <el-main>
                         <el-table
@@ -127,7 +133,7 @@
             </el-container>
         </el-container>
 
-        <el-dialog title="正在创建新容器" :visible.sync="cFormVisible">
+        <el-dialog title="准备创建新容器" :visible.sync="cFormVisible">
             <el-form :model="cform">
                 <el-form-item label="备注" label-width="80px">
                     <el-input v-model="cform.note" autocomplete="off"></el-input>
@@ -161,6 +167,8 @@
 
             data() {
                 return {
+                    loading: false,
+
                     encrypt_method: [null, "rc4-md5", "aes-128-gcm", "aes-192-gcm", "aes-256-gcm", "aes-128-cfb", "aes-192-cfb", "aes-256-cfb", "aes-128-ctr", "aes-192-ctr", "aes-256-ctr", "camellia-128-cfb", "camellia-192-cfb", "camellia-256-cfb", "bf-cfb", "chacha20-ietf-poly1305", "xchacha20-ietf-poly1305", "salsa20", "chacha20", "chacha20-ietf",],
                     ip: "{{ IP }}",
                     tableData: JSON.parse('{{ ds|safe }}'),
@@ -190,6 +198,7 @@
                         )
                     })
                 },
+
                 transfer: function (dom) {
                     this.$prompt('转入的用户', '请输入', {
                         confirmButtonText: '确定',
@@ -200,35 +209,55 @@
                         )
                     })
                 },
+
                 createOne: function (c) {
                     let vm = this;
+
                     if (c) {
-                        this.$data.cFormVisible = false;
+                        vm.$data.cFormVisible = false;
+                        vm.$data.loading = true;
+
                         axios.post(window.location.href, {
                             "action": "new",
                             "note": vm.$data.cform.note,
                             "enc": vm.$data.cform.enc,
+                        }).then(() => {
+                            vm.$data.loading = false;
                         })
                     } else {
-                        this.$data.cFormVisible = true
+                        vm.$data.cFormVisible = true
                     }
                 },
+
                 goDelete: function (dom) {
+                    let vm = this;
+                    vm.$data.loading = true;
+
                     if (dom.container_id) {
                         axios.delete(window.location.href, {data: {"id": dom.container_id}})
+                            .then(() => {
+                                vm.$data.loading = false;
+                            })
                     } else {
-                        this.$notify({
+                        vm.$notify({
                             title: 'Tips',
                             type: 'error',
                             message: "请求删除出错",
                         });
                     }
                 },
+
                 goRestore: function (dom) {
+                    let vm = this;
+                    vm.$data.loading = true;
+
                     if (dom.container_id) {
                         axios.post(window.location.href, {"id": dom.container_id, "action": "restore"})
+                            .then(() => {
+                                vm.$data.loading = false;
+                            })
                     } else {
-                        this.$notify({
+                        vm.$notify({
                             title: 'Tips',
                             type: 'error',
                             message: "请求删除出错",
@@ -236,18 +265,24 @@
                     }
                 },
                 openQR: function (dom) {
+                    let vm = this;
                     let qr = new QRious({
                         size: 150,
                         value: "ss://" +
-                            btoa(dom.method + ":" + dom.pwd + "@" + this.$data.ip + ":" + dom.port) +
+                            btoa(dom.method + ":" + dom.pwd + "@" + vm.$data.ip + ":" + dom.port) +
                             "#" + dom.user,
                     });
-                    this.$alert('<img src="' + qr.toDataURL('image/jpeg') + '" />', '二维码', {
+                    vm.$alert('<img src="' + qr.toDataURL('image/jpeg') + '" />', '二维码', {
                         dangerouslyUseHTMLString: true
                     });
                 },
                 deleteAll: function () {
+                    let vm = this;
+                    vm.$data.loading = true;
                     axios.put(window.location.href)
+                        .then(() => {
+                            vm.$data.loading = false;
+                        })
                 },
             }
         };

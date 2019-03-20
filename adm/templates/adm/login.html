@@ -8,7 +8,7 @@
             <el-col :xs="20" :sm="18" :md="12" :lg="10" :offset="2"><h1>登入！</h1></el-col>
         </el-row>
 
-        <el-row type="flex" justify="center" align="middle">
+        <el-row type="flex" justify="center" align="middle" v-loading="loading">
             <el-col :xs="20" :sm="18" :md="12" :lg="9">
                 <el-form method="post"
                          :model="loginForm"
@@ -54,6 +54,7 @@
             el: '#app',
             data() {
                 return {
+                    loading: false,
                     labelPosition: 'right',
                     loginForm: {
                         username: '',
@@ -77,6 +78,7 @@
             methods: {
                 submitForm(formName) {
                     let vm = this;
+
                     vm.$refs[formName].validate((valid) => {
                         if (!valid) {
                             this.$notify({
@@ -85,7 +87,10 @@
                                 message: "表单填写不正确!",
                             });
                             return false;
+
                         } else {
+                            vm.$data.loading = true;
+
                             axios({
                                 method: 'post',
                                 url: '{{ app_path }}',

@@ -16,7 +16,7 @@ from .docker_utils import Web2DockerMiddleWare, get_docker_client, run_ss_server
 from .models import Billboard
 
 
-@login_required
+@login_required(login_url="/adm/login")
 def show_billboard(request, post_id):
     post = Billboard.objects.get(pk=post_id)
     # post_content = post.content.replace("\r", "\n")

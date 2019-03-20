@@ -5,6 +5,7 @@ import datetime as dt
 import json as js
 import random
 import string
+import traceback
 from os import environ
 
 import docker
@@ -44,7 +45,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/
         rport = port
 
     container_port = random_port()
-    extra = "--fast-open --reuse-port -t 300"
+    extra = "-u -6 --fast-open --reuse-port -t 80"
 
     img_name = img
     command = "ss-server -s 0.0.0.0 -p {lport} -k {pwd} -m {enc_mode} {extra}"
@@ -55,15 +56,18 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/
             name="ss_%s_%s" % (name, random_seed(size=(2, 4))),
             command=command.format(pwd=pwd, lport=container_port, enc_mode=enc_mode, extra=extra),
 
+            user="nobody",
             detach=True,
-            # restart_policy={"Name": "always", "MaximumRetryCount": 5},
-            # auto_remove=True,
-            # remove=True,
+            # restart_policy={"Name": "always", "MaximumRetryCount": 5}, # 不能与 remove 共用
+            auto_remove=True,
+            remove=True,
+
             # network_mode="bridge",
             ports={
                 "%s/tcp" % container_port: rport,
-                # "%s/udp" % container_port: rport,
+                "%s/udp" % container_port: rport,
             },
+
             ulimits=[
                 {"name": "nofile", "soft": 20000, "hard": 40000},
                 {"name": "nproc", "soft": 65535, "hard": 65535},
@@ -81,7 +85,8 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/
         return response
 
     except docker.errors.APIError:
-        return False, False, False, False
+        traceback.print_exc()
+        return False
 
 
 class Web2DockerMiddleWare(object):
