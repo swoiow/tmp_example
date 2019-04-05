@@ -31,11 +31,12 @@ from os import environ
 
 
 def get_ip_address():
-    import socket
+    import urllib3
 
-    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    s.connect(("8.8.8.8", 80))
-    return s.getsockname()[0]
+    http = urllib3.PoolManager()
+    r = http.request("GET", "https://api.ipify.org")
+
+    return r.data.decode()
 
 
 environ["SERVER_IP"] = get_ip_address()
