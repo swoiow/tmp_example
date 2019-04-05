@@ -26,3 +26,16 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(models.Billboard, BillboardAdmin)
+
+from os import environ
+
+
+def get_ip_address():
+    import socket
+
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.connect(("8.8.8.8", 80))
+    return s.getsockname()[0]
+
+
+environ["SERVER_IP"] = get_ip_address()
