@@ -5,6 +5,7 @@ import datetime as dt
 import json as js
 import random
 import string
+import traceback
 from os import environ
 
 import docker
@@ -20,18 +21,20 @@ def get_docker_client() -> docker.client:
     return client
 
 
-def random_seed(size=(10, 16)):
+def random_seed(size=(20, 32)):
     seeds = string.ascii_uppercase + string.ascii_lowercase + string.digits
     size = random.randint(*size)
     return "".join(random.choice(seeds) for x in range(size))
 
 
 def random_port():
-    return random.randint(10000, 63300)
+    return random.randint(30000, 63300)
 
 
-def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/shadowsocks"):
+def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img=None):
     client = get_docker_client()
+    if not img:
+        img = environ.get("SS_IMG", "pylab/shadowsocks-libev")
 
     if not pwd:
         pwd = random_seed()
@@ -44,25 +47,29 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/
         rport = port
 
     container_port = random_port()
-    extra = "--fast-open --reuse-port -t 300"
+    extra = "-u --fast-open --reuse-port -t 80"
 
     img_name = img
-    command = "ss-server -s 0.0.0.0 -p {lport} -k {pwd} -m {enc_mode} {extra}"
+    command = f"ss-server -s 0.0.0.0 -p {container_port} -k {pwd} -m {enc_mode} {extra}"
 
     try:
         response = client.containers.run(
             image=img_name,
             name="ss_%s_%s" % (name, random_seed(size=(2, 4))),
-            command=command.format(pwd=pwd, lport=container_port, enc_mode=enc_mode, extra=extra),
+            command=command,
 
+            user="nobody",
             detach=True,
+            # restart_policy={"Name": "always", "MaximumRetryCount": 5}, # 不能与 remove 共用
             auto_remove=True,
             remove=True,
+
             # network_mode="bridge",
             ports={
                 "%s/tcp" % container_port: rport,
-                # "%s/udp" % container_port: rport,
+                "%s/udp" % container_port: rport,
             },
+
             ulimits=[
                 {"name": "nofile", "soft": 20000, "hard": 40000},
                 {"name": "nproc", "soft": 65535, "hard": 65535},
@@ -80,14 +87,19 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-cfb", img="pylab/
         return response
 
     except docker.errors.APIError:
-        return False, False, False, False
+        traceback.print_exc()
+        return False
 
 
 class Web2DockerMiddleWare(object):
 
     def __init__(self, user):
+        info = environ["REDIS"].split(":")
+        _host = info[0]
+        _port = info[1] if len(info) > 1 else 6379
+
         self.user = user
-        self.rds = StrictRedis(host=environ["REDIS"], socket_keepalive=10)
+        self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10)
         self._mapping = {}  # {'cid': json.dumps()}
 
     @property

@@ -16,7 +16,7 @@ from .docker_utils import Web2DockerMiddleWare, get_docker_client, run_ss_server
 from .models import Billboard
 
 
-@login_required
+@login_required(login_url="/adm/login")
 def show_billboard(request, post_id):
     post = Billboard.objects.get(pk=post_id)
     # post_content = post.content.replace("\r", "\n")
@@ -38,12 +38,15 @@ class SSAdm(LoginRequiredMixin, View):
             data = o.get_user_containers()
 
         posts = Billboard.objects \
-                    .filter(status=Billboard.PUBLIC) \
-                    .order_by("-created")[:3]
+            .filter(status=Billboard.PUBLIC) \
+            .order_by("-created")
 
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
-            "user": username,
+            "user": {
+                "name": username,
+                "is_admin": super_admin,
+            },
             "ds": js.dumps(data),
             "billboard": list(posts.values()),
             "message": "msg_box" in request.session and request.session.pop("msg_box")
@@ -59,7 +62,21 @@ class SSAdm(LoginRequiredMixin, View):
 
         o = Web2DockerMiddleWare(username)
 
-        if fetch_request.get("action") == "transfer" and super_admin:
+        if fetch_request.get("action") == "invite" and super_admin:
+            import uuid
+            from redis import StrictRedis
+
+            info = environ["REDIS"].split(":")
+            _host = info[0]
+            _port = info[1] if len(info) > 1 else 6379
+            rds = StrictRedis(host=_host, port=_port, db=1, socket_keepalive=10, socket_connect_timeout=10)
+
+            usr_id = str(uuid.uuid4())
+            rds.set(usr_id, value=js.dumps({"email": fetch_request["email"]}), ex=3 * 24 * 60 * 60)
+
+            request.session['msg_box'] = "记录成功: %s" % usr_id
+
+        elif fetch_request.get("action") == "transfer" and super_admin:
             resp = o.transfer_container(fetch_request["usr"], fetch_request["id"])
 
             if resp:
@@ -67,8 +84,32 @@ class SSAdm(LoginRequiredMixin, View):
             else:
                 request.session['msg_box'] = "转移失败: 权限不够或用户(容器)不存在"
 
+        elif fetch_request.get("action") == "restore":
+            c_id = fetch_request["id"]
+
+            if super_admin:
+                o.get_all_containers()
+
+                # patch user
+                real_user = js.loads(o.mapping[c_id])["user"]
+                o = Web2DockerMiddleWare(real_user)
+
+            lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
+            response = run_ss_server(username, pwd=lost_container["pwd"], port=lost_container["port"])
+
+            if response:
+                lost_container["container_id"] = response.short_id
+                lost_container["create"] = dt.datetime.today().strftime("%Y-%m-%d")
+
+                o.add_container(lost_container)
+                o.remove_container_record(c_id)
+                request.session['msg_box'] = "还原成功"
+
         elif fetch_request.get("action") == "new" and (o.length < user.dockerextra.quota or super_admin):
-            response = run_ss_server(username)
+            kw = {}
+            if fetch_request.get("enc"):
+                kw["enc_mode"] = fetch_request["enc"]
+            response = run_ss_server(username, **kw)
 
             if response:
                 td = dt.datetime.today().strftime("%Y-%m-%d")

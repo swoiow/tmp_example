@@ -14,16 +14,18 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 
+from adm import views as adm_views
+from cas import views as cas_view
 from django.conf import settings
 from django.conf.urls import include, static, url
 from django.contrib import admin
 from django.urls import path
-
-from cas import views as cas_view
+from django.views.generic.base import RedirectView
 
 
 urlpatterns = [
     path('adm/', admin.site.urls, name="adm"),
+    url(r'^accounts/profile/$', RedirectView.as_view(url="/ss", permanent=True)),
     url(r'^static/(?P<path>.*)$', static.serve, {'document_root': settings.STATIC_ROOT}),
 ]
 
@@ -32,4 +34,5 @@ urlpatterns += [
     url(r'^v1/', include('cas.urls')),
     url(r'^(index|)+$', cas_view.index),
     url(r'^ss/', include('ss.urls')),
+    url(r"^join(/|)+$", adm_views.index, name="join")
 ]

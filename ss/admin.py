@@ -26,3 +26,17 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(models.Billboard, BillboardAdmin)
+
+from os import environ
+
+
+def get_ip_address():
+    import urllib3
+
+    http = urllib3.PoolManager()
+    r = http.request("GET", "https://api.ipify.org")
+
+    return r.data.decode()
+
+
+environ["SERVER_IP"] = get_ip_address()
