@@ -31,8 +31,10 @@ def random_port():
     return random.randint(30000, 63300)
 
 
-def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/shadowsocks"):
+def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img=None):
     client = get_docker_client()
+    if not img:
+        img = environ.get("SS_IMG", "pylab/shadowsocks-libev")
 
     if not pwd:
         pwd = random_seed()
@@ -48,13 +50,13 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img="pylab/
     extra = "-u --fast-open --reuse-port -t 80"
 
     img_name = img
-    command = "ss-server -s 0.0.0.0 -p {lport} -k {pwd} -m {enc_mode} {extra}"
+    command = f"ss-server -s 0.0.0.0 -p {container_port} -k {pwd} -m {enc_mode} {extra}"
 
     try:
         response = client.containers.run(
             image=img_name,
             name="ss_%s_%s" % (name, random_seed(size=(2, 4))),
-            command=command.format(pwd=pwd, lport=container_port, enc_mode=enc_mode, extra=extra),
+            command=command,
 
             user="nobody",
             detach=True,
