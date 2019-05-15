@@ -26,6 +26,7 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(models.Billboard, BillboardAdmin)
+admin.site.register(models.V2rayTemplate, BillboardAdmin)
 
 from os import environ
 

@@ -2,18 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
-import json as js
+import json
 from os import environ
 
 import docker
+import simplejson as js
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 from django.views.generic import View
 
-from .docker_utils import Web2DockerMiddleWare, get_docker_client, run_ss_server
-from .models import Billboard
+from .docker_utils import Web2DockerMiddleWare as SocksProxy, get_docker_client, run_ss_server
+from .models import Billboard, V2rayTemplate
+from .v2ray_utils import Web2DockerMiddleWare as V2rayProxy
 
 
 @login_required(login_url="/adm/login")
@@ -23,15 +25,63 @@ def show_billboard(request, post_id):
     return render(request, "ss/billboard.html", context=dict(post=post))
 
 
+class V2rayAdm(View):
+
+    def get(self, request, *args, **kwargs):
+        user = request.user
+        username = user.username
+        o = V2rayProxy(username)
+
+        return JsonResponse(dict(result=o.info))
+
+    def put(self, request, *args, **kwargs):
+        user = request.user
+        username = user.username
+        o = V2rayProxy(username)
+
+        r = o.create()
+        return JsonResponse(dict(result=r))
+
+    def delete(self, request, *args, **kwargs):
+        user = request.user
+        username = user.username
+        o = V2rayProxy(username)
+        r = o.remove_record()
+
+        return JsonResponse(dict(result=r))
+
+    @staticmethod
+    def restart_container(request, *args, **kwargs):
+        user = request.user
+        username = user.username
+
+        try:
+            default_config = V2rayTemplate.objects \
+                .filter(used=True) \
+                .filter(type=V2rayTemplate.SERVER) \
+                .order_by("-created") \
+                .latest("id")
+        except IndexError:
+            return JsonResponse({"result", "IndexError"})
+
+        o = V2rayProxy(username)
+        r = o.restart(confg_template=default_config.content)
+
+        if r:
+            return JsonResponse(dict(result=o.info))
+
+        return JsonResponse(dict(result=r))
+
+
 class SSAdm(LoginRequiredMixin, View):
-    login_url = "/adm/login?next=/ss/"
+    login_url = "/adm/login?next=/c/ss/"
 
     def get(self, request, *args, **kwargs):
         user = request.user
         super_admin = user.is_superuser
         username = user.username
 
-        o = Web2DockerMiddleWare(username)
+        o = SocksProxy(username)
         if super_admin:
             data = o.get_all_containers()
         else:
@@ -55,12 +105,12 @@ class SSAdm(LoginRequiredMixin, View):
         return render(request, "ss/index.html", context=ctx)
 
     def post(self, request, *args, **kwargs):
-        fetch_request = js.loads(request.body.decode())
+        fetch_request = json.loads(request.body.decode())
         user = request.user
         super_admin = user.is_superuser
         username = user.username
 
-        o = Web2DockerMiddleWare(username)
+        o = SocksProxy(username)
 
         if fetch_request.get("action") == "invite" and super_admin:
             import uuid
@@ -74,15 +124,15 @@ class SSAdm(LoginRequiredMixin, View):
             usr_id = str(uuid.uuid4())
             rds.set(usr_id, value=js.dumps({"email": fetch_request["email"]}), ex=3 * 24 * 60 * 60)
 
-            request.session['msg_box'] = "记录成功: %s" % usr_id
+            request.session["msg_box"] = "记录成功: %s" % usr_id
 
         elif fetch_request.get("action") == "transfer" and super_admin:
             resp = o.transfer_container(fetch_request["usr"], fetch_request["id"])
 
             if resp:
-                request.session['msg_box'] = "转移成功"
+                request.session["msg_box"] = "转移成功"
             else:
-                request.session['msg_box'] = "转移失败: 权限不够或用户(容器)不存在"
+                request.session["msg_box"] = "转移失败: 权限不够或用户(容器)不存在"
 
         elif fetch_request.get("action") == "restore":
             c_id = fetch_request["id"]
@@ -91,8 +141,8 @@ class SSAdm(LoginRequiredMixin, View):
                 o.get_all_containers()
 
                 # patch user
-                real_user = js.loads(o.mapping[c_id])["user"]
-                o = Web2DockerMiddleWare(real_user)
+                real_user = json.loads(o.mapping[c_id])["user"]
+                o = SocksProxy(real_user)
 
             lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
             response = run_ss_server(username, pwd=lost_container["pwd"], port=lost_container["port"])
@@ -103,7 +153,7 @@ class SSAdm(LoginRequiredMixin, View):
 
                 o.add_container(lost_container)
                 o.remove_container_record(c_id)
-                request.session['msg_box'] = "还原成功"
+                request.session["msg_box"] = "还原成功"
 
         elif fetch_request.get("action") == "new" and (o.length < user.dockerextra.quota or super_admin):
             kw = {}
@@ -125,13 +175,13 @@ class SSAdm(LoginRequiredMixin, View):
                 )
 
                 o.add_container(data)
-                request.session['msg_box'] = "创建成功"
+                request.session["msg_box"] = "创建成功"
 
             else:
-                request.session['msg_box'] = "创建失败，请尝试删除所有容器"
+                request.session["msg_box"] = "创建失败，请尝试删除所有容器"
 
         else:
-            request.session['msg_box'] = "超出配额数量, 或指令不被接受"
+            request.session["msg_box"] = "超出配额数量, 或指令不被接受"
 
         response = HttpResponse()
         response["Location1"] = "/ss"
@@ -142,7 +192,7 @@ class SSAdm(LoginRequiredMixin, View):
         username = user.username
 
         client = get_docker_client()
-        o = Web2DockerMiddleWare(username)
+        o = SocksProxy(username)
 
         for record in o.get_user_containers():
             try:
@@ -154,7 +204,7 @@ class SSAdm(LoginRequiredMixin, View):
 
         o.command("delete", username)
 
-        request.session['msg_box'] = "当前用户已清空"
+        request.session["msg_box"] = "当前用户已清空"
 
         response = HttpResponse()
         response["Location1"] = "/ss"
@@ -166,15 +216,15 @@ class SSAdm(LoginRequiredMixin, View):
         username = user.username
 
         if request.body:
-            cid = js.loads(request.body.decode())["id"]
-            o = Web2DockerMiddleWare(username)
+            cid = json.loads(request.body.decode())["id"]
+            o = SocksProxy(username)
 
             if super_admin:
                 o.get_all_containers()
 
                 # patch user
-                real_user = js.loads(o.mapping[cid])["user"]
-                o = Web2DockerMiddleWare(real_user)
+                real_user = json.loads(o.mapping[cid])["user"]
+                o = SocksProxy(real_user)
 
             if o.has_container(cid):
                 try:
@@ -183,11 +233,11 @@ class SSAdm(LoginRequiredMixin, View):
                     container = client.containers.get(cid)
                     container.stop()
 
-                    request.session['msg_box'] = "已删除"
+                    request.session["msg_box"] = "已删除"
                     o.remove_container_record(cid)
 
                 except docker.errors.NotFound:
-                    request.session['msg_box'] = "容器不存在或已删除"
+                    request.session["msg_box"] = "容器不存在或已删除"
 
         response = HttpResponse()
         response["Location1"] = "/ss"

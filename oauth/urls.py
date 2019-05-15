@@ -34,6 +34,6 @@ urlpatterns += [
     url(r'^cas/', include('oauth2_provider.urls', namespace='oauth2_provider')),
     url(r'^v1/', include('cas.urls')),
     url(r'^(index|)+$', cas_view.index),
-    url(r'^ss/', include('ss.urls')),
+    url(r'^c/', include('ss.urls')),
     url(r"^join(/|)+$", adm_views.index, name="join")
 ]

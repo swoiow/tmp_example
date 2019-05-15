@@ -140,8 +140,8 @@
                 </el-form-item>
                 <el-form-item label="加密方式" label-width="80px">
                     <el-select v-model="cform.enc"
-                               placeholder="默认：aes-256-cfb"
-                               no-data-text="aes-256-cfb"
+                               placeholder="默认：aes-128-gcm"
+                               no-data-text="aes-128-gcm"
                     >
                         <el-option v-for="item in encrypt_method" :key="item" :value="item" :label="item">
                         </el-option>

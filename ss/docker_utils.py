@@ -36,7 +36,7 @@ def random_port():
 def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
     client = get_docker_client()
     if not img:
-        img = environ.get("SS_IMG", "pylab/shadowsocks-libev")
+        img = environ.get("SS_IMG", "pylab/shadowsocks-libev:latest")
 
     if not pwd:
         pwd = random_seed()
@@ -111,6 +111,7 @@ class Web2DockerMiddleWare(object):
         _port = info[1] if len(info) > 1 else 6379
 
         self.user = user
+        self.redis_key = f"socks|{self.user}"
         self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10)
         self._mapping = {}  # {'cid': json.dumps()}
 

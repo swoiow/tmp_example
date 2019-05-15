@@ -9,5 +9,7 @@ from . import views
 
 urlpatterns = [
     path("helper/<int:post_id>", views.show_billboard, name="show_billboard"),
-    url(r'^$', views.SSAdm.as_view(), name="ss_adm"),
+    url(r'^ss/$', views.SSAdm.as_view(), name="ss_adm"),
+    url(r'^v2ray$', views.V2rayAdm.as_view(), name="v2ray_adm"),
+    url(r'^v2ray/restart', views.V2rayAdm.restart_container, name="v2ray_restart"),
 ]
