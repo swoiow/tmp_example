@@ -2,13 +2,14 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
-import json as js
+import json
 import random
 import string
 import traceback
 from os import environ
 
 import docker
+import simplejson as js
 from redis import StrictRedis
 
 
@@ -53,6 +54,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img=None):
     command = f"ss-server -s 0.0.0.0 -p {container_port} -k {pwd} -m {enc_mode} {extra}"
 
     try:
+        client.images.pull(img_name)
         response = client.containers.run(
             image=img_name,
             name="ss_%s_%s" % (name, random_seed(size=(2, 4))),
@@ -118,7 +120,7 @@ class Web2DockerMiddleWare(object):
             data = self.rds.smembers(user)
 
             for idx, r in enumerate(data):
-                o = js.loads(r)
+                o = json.loads(r)
                 self._mapping[o["container_id"]] = r
                 json_data.append(o)
 
@@ -131,7 +133,7 @@ class Web2DockerMiddleWare(object):
         data = self.rds.smembers(self.user)
 
         for idx, r in enumerate(data):
-            o = js.loads(r)
+            o = json.loads(r)
             self._mapping[o["container_id"]] = r
             json_data.append(o)
 
@@ -154,7 +156,7 @@ class Web2DockerMiddleWare(object):
     def transfer_container(self, usr, cid):
         for i in self.get_user_containers():
             if cid == i["container_id"]:
-                data = js.loads(self.mapping[cid])
+                data = json.loads(self.mapping[cid])
                 data["user"] = usr
                 data["note"] = "transfer from %s" % self.user
                 self.rds.sadd(usr, js.dumps(data))
