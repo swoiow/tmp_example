@@ -7,6 +7,7 @@ import random
 import string
 import traceback
 from os import environ
+from typing import Dict, List
 
 import docker
 import simplejson as js
@@ -32,7 +33,7 @@ def random_port():
     return random.randint(30000, 63300)
 
 
-def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img=None):
+def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
     client = get_docker_client()
     if not img:
         img = environ.get("SS_IMG", "pylab/shadowsocks-libev")
@@ -59,7 +60,6 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img=None):
             image=img_name,
             name="ss_%s_%s" % (name, random_seed(size=(2, 4))),
             command=command,
-
             user="nobody",
             detach=True,
             # restart_policy={"Name": "always", "MaximumRetryCount": 5}, # 不能与 remove 共用
@@ -71,12 +71,22 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-256-cfb", img=None):
                 "%s/tcp" % container_port: rport,
                 "%s/udp" % container_port: rport,
             },
-
             ulimits=[
-                {"name": "nofile", "soft": 20000, "hard": 40000},
-                {"name": "nproc", "soft": 65535, "hard": 65535},
+                {
+                    "name": "nofile",
+                    "soft": 20000,
+                    "hard": 40000
+                },
+                {
+                    "name": "nproc",
+                    "soft": 65535,
+                    "hard": 65535
+                },
             ],
-            labels={"owner": name, "created": dt.datetime.today().strftime("%Y-%m-%d")},
+            labels={
+                "owner": name,
+                "created": dt.datetime.today().strftime("%Y-%m-%d")
+            },
         )
 
         ext = type("EXT", (object,), {})()
@@ -105,14 +115,14 @@ class Web2DockerMiddleWare(object):
         self._mapping = {}  # {'cid': json.dumps()}
 
     @property
-    def mapping(self):
+    def mapping(self) -> Dict:
         return self._mapping
 
     @property
     def length(self):
         return self.rds.scard(self.user)
 
-    def get_all_containers(self):
+    def get_all_containers(self) -> List:
         keys = self.rds.keys()
         json_data = []
 
@@ -126,7 +136,7 @@ class Web2DockerMiddleWare(object):
 
         return json_data
 
-    def get_user_containers(self):
+    def get_user_containers(self) -> List:
         self._mapping.clear()
 
         json_data = []
