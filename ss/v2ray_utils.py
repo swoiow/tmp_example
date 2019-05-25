@@ -118,8 +118,8 @@ class Web2DockerMiddleWare(object):
                 auto_remove=True,
                 remove=True,
                 ports={
-                    "8388/tcp": 1090,
-                    "8388/udp": 1090,
+                    "1090/tcp": ('127.0.0.1', 8388),
+                    "1090/udp": ('127.0.0.1', 8388),
                 },
                 dns_opt=["1.1.1.1", "8.8.8.8"],
                 stdin_open=True,

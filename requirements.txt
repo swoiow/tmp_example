@@ -1,5 +1,5 @@
-Django
+redis==2.10.6
+Django==2.1.3
 django-oauth-toolkit
-simplejson
-redis
-docker
+simplejson==3.16.0
+docker==3.7.2

@@ -18,7 +18,7 @@ def smart_view(request, *args, **kwargs):
     if super_admin:
         return HttpResponseRedirect(redirect_to="/adm")
     else:
-        return HttpResponseRedirect(redirect_to="/ss")
+        return HttpResponseRedirect(redirect_to="/c")
 
 
 def index(request, *args, **kwargs):
