@@ -62,15 +62,13 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
             command=command,
             user="nobody",
             detach=True,
-            # restart_policy={"Name": "always", "MaximumRetryCount": 5}, # 不能与 remove 共用
             auto_remove=True,
             remove=True,
-
-            # network_mode="bridge",
             ports={
                 "%s/tcp" % container_port: rport,
                 "%s/udp" % container_port: rport,
             },
+            dns_opt=["1.1.1.1", "8.8.8.8"],
             ulimits=[
                 {
                     "name": "nofile",
