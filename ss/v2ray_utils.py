@@ -29,7 +29,7 @@ def generate_user(usr: str) -> Dict:
         "alterId": random.randint(4, 64),
         "_metadata": {
             "usr": usr,
-            "ct": dt.datetime.today().isoformat()
+            "ct": dt.datetime.today().strftime("%Y-%m-%d")
         }
     }
     return data
@@ -47,6 +47,8 @@ def update_config(config: Dict, users: List[Dict]) -> Dict:
 
 
 class Web2DockerMiddleWare(object):
+    _rds_flag = "v2ray|"
+    _container_name = "django-v2ray"
 
     def __init__(self, user):
         info = environ["REDIS"].split(":")
@@ -54,32 +56,35 @@ class Web2DockerMiddleWare(object):
         _port = info[1] if len(info) > 1 else 6379
 
         self.user = user
-        self.redis_key = f"v2ray|{self.user}"
+        self.usr_rds_key = f"{self._rds_flag}{self.user}"
 
         self.rds = StrictRedis(
             host=_host, port=_port, socket_keepalive=10,
-            charset="utf-8", decode_responses=True
+            charset="utf-8", decode_responses=True,
         )
 
     @property
     def info(self):
-        return self.rds.hgetall(f"{self.redis_key}")
+        return self.rds.hgetall(f"{self.usr_rds_key}")
 
     def create(self):
-        if self.user and not self.rds.get(self.redis_key):
-            self.rds.hmset(self.redis_key, generate_user(self.user))
-            return True
-        return False
+        user_data = self.rds.hgetall(self.usr_rds_key)
+        if user_data:
+            return False, user_data
+
+        user_data = generate_user(self.user)
+        self.rds.hmset(self.usr_rds_key, user_data)
+
+        return True, user_data
 
     def remove_record(self):
-        return self.rds.delete(self.redis_key) and True or False
+        return self.rds.delete(self.usr_rds_key) and True or False
 
-    @staticmethod
-    def stop_container(**kwargs):
+    def stop_container(self, **kwargs):
         client = get_docker_client()
 
         try:
-            container = client.containers.get("v2ray")
+            container = client.containers.get(self._container_name)
             container.stop()
             return True
 
@@ -99,14 +104,14 @@ class Web2DockerMiddleWare(object):
             return False
 
         config = update_config(config, list(self._get_all_users()))
-        config = js.dumps(config)
-        command = f'v2ray -config=stdin: <<< {config}'
+        str_config = js.dumps(config)
+        command = f'v2ray -config=stdin: <<< {str_config}'
         client = get_docker_client()
 
         try:
             client.containers.run(
-                image="v2ray",
-                name="v2ray",
+                image="pylab/v2ray",
+                name=self._container_name,
                 command=command,
                 user="nobody",
                 detach=True,
@@ -146,8 +151,6 @@ class Web2DockerMiddleWare(object):
     def restart(self, **kwargs):
         self.stop_container(**kwargs)
         return self.start_container(**kwargs)
-
-
 
     def _get_all_users(self):
         for user_key in self.rds.scan_iter("v2ray|*"):

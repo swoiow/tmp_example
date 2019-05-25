@@ -25,7 +25,50 @@ def show_billboard(request, post_id):
     return render(request, "ss/billboard.html", context=dict(post=post))
 
 
-class V2rayAdm(View):
+class API(View):
+
+    @staticmethod
+    def get_user_info(request, *args, **kwargs):
+        user = request.user
+        super_admin = user.is_superuser
+        username = user.username
+
+        socks_proxy = SocksProxy(username)
+        v2ray_proxy = V2rayProxy(username)
+
+        socks_user_info = socks_proxy.get_all_containers() if super_admin else socks_proxy.get_user_containers()
+        __map_func__ = map(lambda d: d.update({"type": "ss"}), socks_user_info)
+        __call_map_func__ = list(__map_func__)
+
+        v2ray_user_info = v2ray_proxy.info
+        if v2ray_user_info:
+            v2ray_user_info = API._cover_v2ray_style_to_socks_style(v2ray_user_info)
+            v2ray_user_info.update({"type": "v2ray"})
+
+            socks_user_info.insert(0, v2ray_user_info)
+
+        return JsonResponse(dict(rv=socks_user_info))
+
+    @staticmethod
+    def get_billboard_info(*args, **kwargs):
+        posts = Billboard.objects \
+            .filter(status=Billboard.PUBLIC) \
+            .order_by("-created")
+
+        return list(posts.values())
+
+    @staticmethod
+    def _cover_v2ray_style_to_socks_style(data: dict):
+        meta = data["_metadata"]
+        meta = meta.replace("\'", "\"")
+        meta = json.loads(meta)
+
+        mapping = dict(pwd="id", method="alterId", user="usr", create="ct")
+        get_value = lambda k: data.get(mapping[k], meta.get(mapping[k]))
+        return {k: get_value(k) for k in mapping.keys()}
+
+
+class V2rayAdm(LoginRequiredMixin, View):
 
     def get(self, request, *args, **kwargs):
         user = request.user
@@ -39,16 +82,29 @@ class V2rayAdm(View):
         username = user.username
         o = V2rayProxy(username)
 
-        r = o.create()
-        return JsonResponse(dict(result=r))
+        st, r = o.create()
+        if st:
+            self.restart_container(request)
+        request.session["msg_box"] = "创建结果: %s" % (st and "创建" or "已存在")
+
+        response = HttpResponse()
+        response["Location1"] = "/c/ss"
+        return response
 
     def delete(self, request, *args, **kwargs):
         user = request.user
         username = user.username
         o = V2rayProxy(username)
-        r = o.remove_record()
 
-        return JsonResponse(dict(result=r))
+        r = o.remove_record()
+        if r:
+            self.restart_container(request)
+
+        request.session["msg_box"] = "删除结果: %s" % r
+
+        response = HttpResponse()
+        response["Location1"] = "/c/ss"
+        return response
 
     @staticmethod
     def restart_container(request, *args, **kwargs):
@@ -67,29 +123,20 @@ class V2rayAdm(View):
         o = V2rayProxy(username)
         r = o.restart(confg_template=default_config.content)
 
-        if r:
-            return JsonResponse(dict(result=o.info))
+        request.session["msg_box"] = "重启结果: %s" % r
 
-        return JsonResponse(dict(result=r))
+        response = HttpResponse()
+        response["Location1"] = "/c/ss"
+        return response
 
 
 class SSAdm(LoginRequiredMixin, View):
-    login_url = "/adm/login?next=/c/ss/"
+    login_url = "/adm/login?next=/c/ss"
 
     def get(self, request, *args, **kwargs):
         user = request.user
         super_admin = user.is_superuser
         username = user.username
-
-        o = SocksProxy(username)
-        if super_admin:
-            data = o.get_all_containers()
-        else:
-            data = o.get_user_containers()
-
-        posts = Billboard.objects \
-            .filter(status=Billboard.PUBLIC) \
-            .order_by("-created")
 
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
@@ -97,8 +144,8 @@ class SSAdm(LoginRequiredMixin, View):
                 "name": username,
                 "is_admin": super_admin,
             },
-            "ds": js.dumps(data),
-            "billboard": list(posts.values()),
+            # "ds": js.dumps(data),
+            "billboard": API.get_billboard_info(),
             "message": "msg_box" in request.session and request.session.pop("msg_box")
         }
 
@@ -184,7 +231,7 @@ class SSAdm(LoginRequiredMixin, View):
             request.session["msg_box"] = "超出配额数量, 或指令不被接受"
 
         response = HttpResponse()
-        response["Location1"] = "/ss"
+        response["Location1"] = "/c/ss"
         return response
 
     def put(self, request, *args, **kwargs):
@@ -202,12 +249,12 @@ class SSAdm(LoginRequiredMixin, View):
             except docker.errors.NotFound:
                 pass
 
-        o.command("delete", username)
+        o.user_rest_all()
 
         request.session["msg_box"] = "当前用户已清空"
 
         response = HttpResponse()
-        response["Location1"] = "/ss"
+        response["Location1"] = "/c/ss"
         return response
 
     def delete(self, request, *args, **kwargs):
@@ -240,5 +287,5 @@ class SSAdm(LoginRequiredMixin, View):
                     request.session["msg_box"] = "容器不存在或已删除"
 
         response = HttpResponse()
-        response["Location1"] = "/ss"
+        response["Location1"] = "/c/ss"
         return response

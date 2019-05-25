@@ -104,6 +104,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
 
 
 class Web2DockerMiddleWare(object):
+    _rds_flag = "socks|"
 
     def __init__(self, user):
         info = environ["REDIS"].split(":")
@@ -111,7 +112,7 @@ class Web2DockerMiddleWare(object):
         _port = info[1] if len(info) > 1 else 6379
 
         self.user = user
-        self.redis_key = f"socks|{self.user}"
+        self.usr_rds_key = f"{self._rds_flag}{self.user}"
         self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10)
         self._mapping = {}  # {'cid': json.dumps()}
 
@@ -124,7 +125,7 @@ class Web2DockerMiddleWare(object):
         return self.rds.scard(self.user)
 
     def get_all_containers(self) -> List:
-        keys = self.rds.keys()
+        keys = self.rds.keys(f"{self._rds_flag}*")
         json_data = []
 
         for user in keys:
@@ -141,7 +142,7 @@ class Web2DockerMiddleWare(object):
         self._mapping.clear()
 
         json_data = []
-        data = self.rds.smembers(self.user)
+        data = self.rds.smembers(self.usr_rds_key)
 
         for idx, r in enumerate(data):
             o = json.loads(r)
@@ -151,7 +152,7 @@ class Web2DockerMiddleWare(object):
         return json_data
 
     def add_container(self, data):
-        self.rds.sadd(self.user, js.dumps(data))
+        self.rds.sadd(self.usr_rds_key, js.dumps(data))
         return True
 
     def has_container(self, cid):
@@ -162,7 +163,7 @@ class Web2DockerMiddleWare(object):
     def remove_container_record(self, cid):
         for i in self.get_user_containers():
             if cid == i["container_id"]:
-                return self.rds.srem(self.user, self.mapping[cid])
+                return self.rds.srem(self.usr_rds_key, self.mapping[cid])
 
     def transfer_container(self, usr, cid):
         for i in self.get_user_containers():
@@ -178,6 +179,9 @@ class Web2DockerMiddleWare(object):
 
         return False
 
-    def command(self, command, params):
+    def user_rest_all(self):
+        self._command("delete", self.usr_rds_key)
+
+    def _command(self, command, params):
         c = self.rds.__getattribute__(command)
         c(params)
