@@ -166,8 +166,8 @@ class Web2DockerMiddleWare(object):
                 data = json.loads(self.mapping[cid])
                 data["user"] = usr
                 data["note"] = "transfer from %s" % self.user
-                self.rds.sadd(usr, js.dumps(data))
 
+                self.add_container(data)
                 self.remove_container_record(cid)
 
                 return True
