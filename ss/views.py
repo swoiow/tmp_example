@@ -267,13 +267,19 @@ class FTWAdm(SSAdm):
         super_admin = user.is_superuser
         username = user.username
 
+        o = SocksVendor(username)
+        if super_admin:
+            data = o.get_all_containers()
+        else:
+            data = o.get_user_containers()
+
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
             "user": {
                 "name": username,
                 "is_admin": super_admin,
             },
-            # "ds": js.dumps(data),
+            "ds": js.dumps(data),
             "billboard": self.get_billboard_info(),
             "message": self.flush_message(req)
         }
