@@ -69,18 +69,15 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
                 "%s/udp" % container_port: rport,
             },
             dns_opt=["1.1.1.1", "8.8.8.8"],
-            ulimits=[
-                {
-                    "name": "nofile",
-                    "soft": 20000,
-                    "hard": 40000
-                },
-                {
-                    "name": "nproc",
-                    "soft": 65535,
-                    "hard": 65535
-                },
-            ],
+            ulimits=[{
+                "name": "nofile",
+                "soft": 20000,
+                "hard": 40000,
+            }, {
+                "name": "nproc",
+                "soft": 65535,
+                "hard": 65535,
+            }],
             labels={
                 "owner": name,
                 "created": dt.datetime.today().strftime("%Y-%m-%d")

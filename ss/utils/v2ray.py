@@ -13,7 +13,7 @@ import docker
 import simplejson as js
 from redis import StrictRedis
 
-from .docker_utils import get_docker_client
+from ss.utils.shadowsocks import get_docker_client
 
 
 config_path = environ.get("CONFIG_SERVER", "config-server.json")
@@ -58,10 +58,7 @@ class Web2DockerMiddleWare(object):
         self.user = user
         self.usr_rds_key = f"{self._rds_flag}{self.user}"
 
-        self.rds = StrictRedis(
-            host=_host, port=_port, socket_keepalive=10,
-            charset="utf-8", decode_responses=True,
-        )
+        self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10, charset="utf-8", decode_responses=True, )
 
     @property
     def info(self):
@@ -124,18 +121,15 @@ class Web2DockerMiddleWare(object):
                 dns_opt=["1.1.1.1", "8.8.8.8"],
                 stdin_open=True,
                 # tty=True,  # this param is for stdin
-                ulimits=[
-                    {
-                        "name": "nofile",
-                        "soft": 20000,
-                        "hard": 40000
-                    },
-                    {
-                        "name": "nproc",
-                        "soft": 65535,
-                        "hard": 65535
-                    },
-                ],
+                ulimits=[{
+                    "name": "nofile",
+                    "soft": 20000,
+                    "hard": 40000
+                }, {
+                    "name": "nproc",
+                    "soft": 65535,
+                    "hard": 65535
+                }],
                 labels={
                     "owner": "system",
                     "created": dt.datetime.today().strftime("%Y-%m-%d")
