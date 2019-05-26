@@ -192,7 +192,12 @@ class SSAdm(LoginRequiredMixin, View):
                 o = SocksProxy(real_user)
 
             lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
-            response = run_ss_server(username, pwd=lost_container["pwd"], port=lost_container["port"])
+            response = run_ss_server(
+                username,
+                pwd=lost_container["pwd"],
+                port=lost_container["port"],
+                enc_mode=lost_container["method"],
+            )
 
             if response:
                 lost_container["container_id"] = response.short_id
