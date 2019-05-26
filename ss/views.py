@@ -293,14 +293,14 @@ class FTWAdm(SSAdm):
         __map_func__ = map(lambda d: d.update({"type": "ss"}), socks_user_info)
         __call_map_func__ = list(__map_func__)
 
-        v2ray_user_info = v2ray_proxy.info
-        if v2ray_user_info:
-            v2ray_user_info = _cover_v2ray_style_to_socks_style(v2ray_user_info)
-            v2ray_user_info.update({"type": "v2ray"})
+        v2ray_user_info = [v2ray_proxy.info] \
+            if not super_admin \
+            else list(map(_cover_v2ray_style_to_socks_style, v2ray_proxy._get_all_users()))
+        __map_func__ = map(lambda d: d.update({"type": "v2ray"}), v2ray_user_info)
+        __call_map_func__ = list(__map_func__)
+        show_info = v2ray_user_info + socks_user_info if not super_admin else socks_user_info + v2ray_user_info
 
-            socks_user_info.insert(0, v2ray_user_info)
-
-        return JsonResponse(dict(rv=socks_user_info))
+        return JsonResponse(dict(rv=show_info))
 
     @staticmethod
     def get_billboard_info(*args, **kwargs):

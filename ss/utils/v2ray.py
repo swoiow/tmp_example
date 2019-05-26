@@ -98,11 +98,16 @@ class Web2DockerMiddleWare(object):
 
         config = kwargs.get("confg_template")
         if not config:
-            return False
+            return "服务端模板没定义或没开启"
 
-        config = update_config(config, list(self._get_all_users()))
-        str_config = js.dumps(config)
-        command = f'v2ray -config=stdin: <<< {str_config}'
+        users_data = list(self._get_all_users())
+        if not users_data:
+            return "没有任何的用户数据，中止创建"
+
+        config = update_config(config, users_data)
+        str_config = js.dumps(config, separators=(",", ":"))
+        double_encode = js.dumps(str_config)
+        command = f'v2ray -config=stdin: <<< {double_encode}'
         client = get_docker_client()
 
         try:
@@ -115,8 +120,8 @@ class Web2DockerMiddleWare(object):
                 auto_remove=True,
                 remove=True,
                 ports={
-                    "1090/tcp": ('127.0.0.1', 8388),
-                    "1090/udp": ('127.0.0.1', 8388),
+                    "1090/tcp": ("127.0.0.1", 8388),
+                    "1090/udp": ("127.0.0.1", 8388),
                 },
                 dns_opt=["1.1.1.1", "8.8.8.8"],
                 stdin_open=True,
