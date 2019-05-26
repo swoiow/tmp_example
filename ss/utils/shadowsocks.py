@@ -146,8 +146,11 @@ class Web2DockerMiddleWare(object):
 
         return json_data
 
-    def add_container(self, data):
-        self.rds.sadd(self.usr_rds_key, js.dumps(data))
+    def add_container(self, data, usr_key=None):
+        if not usr_key:
+            usr_key = self.usr_rds_key
+
+        self.rds.sadd(usr_key, js.dumps(data))
         return True
 
     def has_container(self, cid):
@@ -167,7 +170,7 @@ class Web2DockerMiddleWare(object):
                 data["user"] = usr
                 data["note"] = "transfer from %s" % self.user
 
-                self.add_container(data)
+                self.add_container(data, usr_key=f"{self._rds_flag}{usr}")
                 self.remove_container_record(cid)
 
                 return True
