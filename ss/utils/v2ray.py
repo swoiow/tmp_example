@@ -74,8 +74,9 @@ class Web2DockerMiddleWare(object):
 
         return True, user_data
 
-    def remove_record(self):
-        return self.rds.delete(self.usr_rds_key) and True or False
+    def remove_record(self, username=None):
+        usr_rds_key = username and f"{self._rds_flag}{username}" or self.usr_rds_key
+        return self.rds.delete(usr_rds_key) and True or False
 
     def stop_container(self, **kwargs):
         client = get_docker_client()
@@ -86,7 +87,7 @@ class Web2DockerMiddleWare(object):
             return True
 
         except docker.errors.NotFound:
-            pass
+            return False
 
     def start_container(self, **kwargs):
         """

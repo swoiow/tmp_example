@@ -50,7 +50,14 @@ class V2rayAdm(LoginRequiredMixin):
     def delete(self, req, *args, **kwargs):
         user = req.user
         username = user.username
+        super_admin = user.is_superuser
+
         o = V2rayVendor(username)
+        if req.body:
+            usr = json.loads(req.body.decode())["user"]
+
+            if super_admin:
+                o = V2rayVendor(usr)
 
         result = o.remove_record()
         if result:
@@ -249,13 +256,14 @@ class SSAdm(LoginRequiredMixin):
             self.set_message(req, "创建失败，请尝试删除所有容器")
 
 
-def _cover_v2ray_style_to_socks_style(data: dict):
+def _cover_v2ray_style_to_socks_style(data: dict) -> dict:
     meta = data["_metadata"]
     meta = meta.replace("\'", "\"")
     meta = json.loads(meta)
 
     mapping = dict(pwd="id", method="alterId", user="usr", create="ct")
     get_value = lambda k: data.get(mapping[k], meta.get(mapping[k]))
+
     return {k: get_value(k) for k in mapping.keys()}
 
 
@@ -267,12 +275,25 @@ class FTWAdm(SSAdm):
         super_admin = user.is_superuser
         username = user.username
 
-        o = SocksVendor(username)
-        if super_admin:
-            data = o.get_all_containers()
-        else:
-            data = o.get_user_containers()
+        oS = SocksVendor(username)
+        oV = V2rayVendor(username)
 
+        data_oV = []
+        if super_admin:
+            data_oS = oS.get_all_containers()
+            list(map(lambda x: x.update({"type": "ss"}), data_oS))
+            data_oV = [_cover_v2ray_style_to_socks_style(item) for item in oV._get_all_users()]
+            list(map(lambda x: x.update({"type": "v2ray"}), data_oV))
+
+        else:
+            data_oS = oS.get_user_containers()
+            list(map(lambda x: x.update({"type": "ss"}), data_oS))
+
+            if oV.info:
+                data_oV = [_cover_v2ray_style_to_socks_style(oV.info)]
+                list(map(lambda x: x.update({"type": "v2ray"}), data_oV))
+
+        data = data_oV + data_oS
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
             "user": {
@@ -295,7 +316,9 @@ class FTWAdm(SSAdm):
         socks_proxy = SocksVendor(username)
         v2ray_proxy = V2rayVendor(username)
 
-        socks_user_info = socks_proxy.get_all_containers() if super_admin else socks_proxy.get_user_containers()
+        socks_user_info = socks_proxy.get_all_containers() \
+            if super_admin \
+            else socks_proxy.get_user_containers()
         __map_func__ = map(lambda d: d.update({"type": "ss"}), socks_user_info)
         __call_map_func__ = list(__map_func__)
 

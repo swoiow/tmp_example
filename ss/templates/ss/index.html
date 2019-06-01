@@ -266,7 +266,7 @@
                   vm.$data.loading = true
 
                   if (dom.type === "v2ray") {
-                      vm.deleteV2ray().then(() => {
+                      vm.deleteV2ray(dom.user).then(() => {
                           vm.$data.loading = false
                       })
 
@@ -335,10 +335,10 @@
                   })
               },
 
-              deleteV2ray: function () {
+              deleteV2ray: function (user) {
                   let vm = this
                   vm.$data.loading = true
-                  return axios.delete("/c/v2ray", {}).then(() => {
+                  return axios.delete("/c/v2ray", {data: {"user": user}}).then(() => {
                       vm.$data.loading = false
                   })
               },
