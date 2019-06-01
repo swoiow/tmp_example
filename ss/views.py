@@ -205,8 +205,8 @@ class SSAdm(LoginRequiredMixin):
             o.get_all_containers()
 
             # patch user
-            real_user = json.loads(o.mapping[c_id])["user"]
-            o = SocksVendor(real_user)
+            username = json.loads(o.mapping[c_id])["user"]
+            o = SocksVendor(username)
 
         lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
         resp = run_ss_server(
