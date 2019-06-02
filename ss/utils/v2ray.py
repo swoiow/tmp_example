@@ -14,6 +14,7 @@ import simplejson as js
 from redis import StrictRedis
 
 from ss.utils.shadowsocks import get_docker_client
+from .w2d import Web2Docker
 
 
 config_path = environ.get("CONFIG_SERVER", "config-server.json")
@@ -26,7 +27,7 @@ if path.isfile(config_path):
 def generate_user(usr: str) -> Dict:
     data = {
         "id": str(uuid.uuid4()),
-        "alterId": random.randint(4, 64),
+        "alterId": random.randint(4, 32),
         "_metadata": {
             "usr": usr,
             "ct": dt.datetime.today().strftime("%Y-%m-%d")
@@ -46,7 +47,7 @@ def update_config(config: Dict, users: List[Dict]) -> Dict:
     return config
 
 
-class Web2DockerMiddleWare(object):
+class Web2DockerMiddleWare(Web2Docker):
     _rds_flag = "v2ray|"
     _container_name = "django-v2ray"
 
@@ -62,21 +63,34 @@ class Web2DockerMiddleWare(object):
 
     @property
     def info(self):
-        return self.rds.hgetall(f"{self.usr_rds_key}")
+        rds_data = self.rds.get(f"{self.usr_rds_key}")
+        return self.from_json(rds_data)
 
     def create(self):
-        user_data = self.rds.hgetall(self.usr_rds_key)
+        user_data = self.rds.get(self.usr_rds_key)
         if user_data:
             return False, user_data
 
         user_data = generate_user(self.user)
-        self.rds.hmset(self.usr_rds_key, user_data)
+        rds_user_data = self.to_json(user_data)
+        self.rds.set(self.usr_rds_key, rds_user_data)
 
         return True, user_data
 
     def remove_record(self, username=None):
         usr_rds_key = username and f"{self._rds_flag}{username}" or self.usr_rds_key
         return self.rds.delete(usr_rds_key) and True or False
+
+    def remove_container(self, **kwargs):
+        client = get_docker_client()
+
+        try:
+            container = client.containers.get(self._container_name)
+            container.remove()
+            return True
+
+        except docker.errors.NotFound:
+            return False
 
     def stop_container(self, **kwargs):
         client = get_docker_client()
@@ -95,11 +109,13 @@ class Web2DockerMiddleWare(object):
             https://github.com/v2ray/discussion/issues/11
 
             echo '{"inbounds": [{"port": 12345, "protocol": "vmess", "settings": {"clients": []}, "streamSettings": {"network": "ws", "wsSettings": {"path": "/service-path/"}}}], "outbounds": [{"protocol": "freedom", "settings": {}}]}' |  dk run -i  v2ray  v2ray  -config=stdin: cat -
+            docker run -i v2ray v2ray -test -config=stdin: <<< '{"inbounds": [{"port": 12345, "protocol": "vmess", "settings": {"clients": []}, "streamSettings": {"network": "ws", "wsSettings": {"path": "/service-path/"}}}], "outbounds": [{"protocol": "freedom", "settings": {}}]}'
         """
 
         config = kwargs.get("confg_template")
         if not config:
             return "服务端模板没定义或没开启"
+        config = json.loads(config)
 
         users_data = list(self._get_all_users())
         if not users_data:
@@ -108,7 +124,8 @@ class Web2DockerMiddleWare(object):
         config = update_config(config, users_data)
         str_config = js.dumps(config, separators=(",", ":"))
         double_encode = js.dumps(str_config)
-        command = f'v2ray -config=stdin: <<< {double_encode}'
+
+        command = f"v2ray -test -config=stdin: <<< '{str_config}'"
         client = get_docker_client()
 
         try:
@@ -118,11 +135,11 @@ class Web2DockerMiddleWare(object):
                 command=command,
                 user="nobody",
                 detach=True,
-                auto_remove=True,
-                remove=True,
+                # auto_remove=True,
+                # remove=True,
                 ports={
-                    "1090/tcp": ("127.0.0.1", 8388),
-                    "1090/udp": ("127.0.0.1", 8388),
+                    "1090/tcp": ("0.0.0.0", 1090),
+                    "1090/udp": ("0.0.0.0", 1090),
                 },
                 dns_opt=["1.1.1.1", "8.8.8.8"],
                 stdin_open=True,
@@ -150,9 +167,11 @@ class Web2DockerMiddleWare(object):
 
     def restart(self, **kwargs):
         self.stop_container(**kwargs)
+        self.remove_container(**kwargs)
         return self.start_container(**kwargs)
 
     def _get_all_users(self):
-        for user_key in self.rds.scan_iter("v2ray|*"):
-            user_json = self.rds.hgetall(user_key)
-            yield user_json
+        for user_key in self.rds.scan_iter(f"{self._rds_flag}*"):
+            rds_data = self.rds.get(user_key)
+            rds_data = self.from_json(rds_data)
+            yield rds_data

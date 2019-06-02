@@ -13,6 +13,8 @@ import docker
 import simplejson as js
 from redis import StrictRedis
 
+from .w2d import Web2Docker
+
 
 def get_docker_client() -> docker.client:
     if "DOCKER_SOCK" in environ:
@@ -98,7 +100,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
         return False
 
 
-class Web2DockerMiddleWare(object):
+class Web2DockerMiddleWare(Web2Docker):
     _rds_flag = "socks|"
 
     def __init__(self, user):
@@ -120,7 +122,7 @@ class Web2DockerMiddleWare(object):
         return self.rds.scard(self.user)
 
     def get_all_containers(self) -> List:
-        keys = self.rds.keys(f"{self._rds_flag}*")
+        keys = self.rds.scan_iter(f"{self._rds_flag}*")
         json_data = []
 
         for user in keys:

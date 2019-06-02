@@ -44,6 +44,8 @@ class DockerExtra(models.Model):
 
 
 class V2rayTemplate(models.Model):
+    # TODO: send signal
+
     CLIENT = "c"
     SERVER = "s"
     STATUS_CHOICES = (
@@ -76,13 +78,13 @@ class V2rayTemplate(models.Model):
         instance._state.adding = False
         instance._state.db = db
         # customization to store the original field values on the instance
-        instance.content = json.loads(instance.content)
+        # instance.content = json.loads(instance.content)
         instance._loaded_values = dict(zip(field_names, values))
         return instance
 
     def save(self, *args, **kwargs):
         data = self.content
-        data = data.replace("\'", "\"")
+        # data = data.replace("\'", "\"")
 
         data_dict = json.loads(data)
         self.content = json.dumps(data_dict)

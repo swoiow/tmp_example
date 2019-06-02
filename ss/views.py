@@ -89,7 +89,7 @@ class V2rayAdm(LoginRequiredMixin):
         req.session["msg_box"] = f"重启结果: {result}"
 
         resp = HttpResponse()
-        resp["Location1"] = "/c/ss"
+        resp["Location"] = "/c/ss"
         return resp
 
 
@@ -258,8 +258,8 @@ class SSAdm(LoginRequiredMixin):
 
 def _cover_v2ray_style_to_socks_style(data: dict) -> dict:
     meta = data["_metadata"]
-    meta = meta.replace("\'", "\"")
-    meta = json.loads(meta)
+    # meta = meta.replace("\'", "\"")
+    # meta = json.loads(meta)
 
     mapping = dict(pwd="id", method="alterId", user="usr", create="ct")
     get_value = lambda k: data.get(mapping[k], meta.get(mapping[k]))

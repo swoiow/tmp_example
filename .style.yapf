@@ -1,0 +1,17 @@
+[style]
+column_limit = 120
+based_on_style = facebook
+spaces_before_comment = 2
+split_before_logical_operator = true
+align_closing_bracket_with_visual_indent  = true
+blank_lines_around_top_level_definition = 2
+blank_line_before_nested_class_or_def = true
+coalesce_brackets = true
+dedent_closing_brackets = true
+join_multiple_lines = true
+split_before_dict_set_generator = true
+split_complex_comprehension = true
+no_spaces_around_selected_binary_operators = true
+each_dict_entry_on_separate_line = true
+split_arguments_when_comma_terminated = True
+disable_ending_comma_heuristic = True
