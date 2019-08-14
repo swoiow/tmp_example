@@ -1,6 +1,5 @@
 from .settings import *
 
-
 SECRET_KEY = os.urandom(32)
 
 DEBUG = False

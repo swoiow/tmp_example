@@ -6,7 +6,6 @@ from django.urls import path
 
 from . import views
 
-
 urlpatterns = [
     path("helper/<int:post_id>", views.show_billboard, name="show_billboard"),
     url(r'^api/user_data$', views.FTWAdm.get_user_info),

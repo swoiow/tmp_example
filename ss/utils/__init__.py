@@ -4,4 +4,3 @@
 
 from .shadowsocks import Web2DockerMiddleWare as SocksVendor
 from .v2ray import Web2DockerMiddleWare as V2rayVendor
-

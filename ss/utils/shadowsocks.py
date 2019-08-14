@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
-import json
 import random
 import string
 import traceback
@@ -10,19 +9,10 @@ from os import environ
 from typing import Dict, List
 
 import docker
-import simplejson as js
-from redis import StrictRedis
 
+from vendor.redis import RedisPlus
+from vendor.utils import get_docker_client, js
 from .w2d import Web2Docker
-
-
-def get_docker_client() -> docker.client:
-    if "DOCKER_SOCK" in environ:
-        client = docker.DockerClient(base_url=environ["DOCKER_SOCK"])
-    else:
-        client = docker.from_env()
-
-    return client
 
 
 def random_seed(size=(20, 32)):
@@ -73,8 +63,8 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
             dns_opt=["1.1.1.1", "8.8.8.8"],
             ulimits=[{
                 "name": "nofile",
-                "soft": 20000,
-                "hard": 40000,
+                "soft": 65535,
+                "hard": 65535,
             }, {
                 "name": "nproc",
                 "soft": 65535,
@@ -104,13 +94,9 @@ class Web2DockerMiddleWare(Web2Docker):
     _rds_flag = "socks|"
 
     def __init__(self, user):
-        info = environ["REDIS"].split(":")
-        _host = info[0]
-        _port = info[1] if len(info) > 1 else 6379
-
         self.user = user
         self.usr_rds_key = f"{self._rds_flag}{self.user}"
-        self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10)
+        self.rds = RedisPlus(db_space=1)
         self._mapping = {}  # {'cid': json.dumps()}
 
     @property
@@ -121,7 +107,7 @@ class Web2DockerMiddleWare(Web2Docker):
     def length(self):
         return self.rds.scard(self.user)
 
-    def get_all_containers(self) -> List:
+    def get_all_containers(self) -> List[Dict]:
         keys = self.rds.scan_iter(f"{self._rds_flag}*")
         json_data = []
 
@@ -129,20 +115,20 @@ class Web2DockerMiddleWare(Web2Docker):
             data = self.rds.smembers(user)
 
             for idx, r in enumerate(data):
-                o = json.loads(r)
+                o = js.load_json(r)
                 self._mapping[o["container_id"]] = r
                 json_data.append(o)
 
         return json_data
 
-    def get_user_containers(self) -> List:
+    def get_user_containers(self) -> List[Dict]:
         self._mapping.clear()
 
         json_data = []
         data = self.rds.smembers(self.usr_rds_key)
 
         for idx, r in enumerate(data):
-            o = json.loads(r)
+            o = js.load_json(r)
             self._mapping[o["container_id"]] = r
             json_data.append(o)
 
@@ -152,7 +138,7 @@ class Web2DockerMiddleWare(Web2Docker):
         if not usr_key:
             usr_key = self.usr_rds_key
 
-        self.rds.sadd(usr_key, js.dumps(data))
+        self.rds.sadd(usr_key, js.dump_json(data))
         return True
 
     def has_container(self, cid):
@@ -168,7 +154,7 @@ class Web2DockerMiddleWare(Web2Docker):
     def transfer_container(self, usr, cid):
         for i in self.get_user_containers():
             if cid == i["container_id"]:
-                data = json.loads(self.mapping[cid])
+                data = js.load_json(self.mapping[cid])
                 data["user"] = usr
                 data["note"] = "transfer from %s" % self.user
 

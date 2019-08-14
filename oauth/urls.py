@@ -23,7 +23,6 @@ from django.views.generic.base import RedirectView
 from adm import views as adm_views
 from cas import views as cas_view
 
-
 urlpatterns = [
     path('adm/', admin.site.urls, name="adm"),
     url(r'^accounts/profile/$', RedirectView.as_view(url="/c", permanent=True)),

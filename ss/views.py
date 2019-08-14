@@ -2,18 +2,20 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
-import json
 from os import environ
 
 import docker
-import simplejson as js
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
 
+import adm.services as adm_service
 from ss.utils import SocksVendor, V2rayVendor
-from ss.utils.shadowsocks import get_docker_client, run_ss_server
+from ss.utils.schema import SockSchema, V2raySchema
+from ss.utils.shadowsocks import run_ss_server
 from ss.utils.views import LoginRequiredMixin
+from vendor.redis import RedisPlus
+from vendor.utils import js, get_docker_client
 from .models import Billboard, V2rayTemplate
 
 
@@ -54,7 +56,7 @@ class V2rayAdm(LoginRequiredMixin):
 
         o = V2rayVendor(username)
         if req.body:
-            usr = json.loads(req.body.decode())["user"]
+            usr = js.load_json(req.body.decode())["user"]
 
             if super_admin:
                 o = V2rayVendor(usr)
@@ -97,7 +99,7 @@ class SSAdm(LoginRequiredMixin):
 
     def post(self, req, *args, **kwargs):
 
-        fetch_request = json.loads(req.body.decode())
+        fetch_request = js.load_json(req.body.decode())
         user = req.user
         super_admin = user.is_superuser
         username = user.username
@@ -152,14 +154,14 @@ class SSAdm(LoginRequiredMixin):
         username = user.username
 
         if req.body:
-            cid = json.loads(req.body.decode())["id"]
+            cid = js.load_json(req.body.decode())["id"]
             o = SocksVendor(username)
 
             if super_admin:
                 o.get_all_containers()
 
                 # patch user
-                real_user = json.loads(o.mapping[cid])["user"]
+                real_user = js.load_json(o.mapping[cid])["user"]
                 o = SocksVendor(real_user)
 
             if o.has_container(cid):
@@ -181,15 +183,14 @@ class SSAdm(LoginRequiredMixin):
 
     def handle_action_invite(self, req, fetch_request, *args, **kwargs):
         import uuid
-        from redis import StrictRedis
-
-        info = environ["REDIS"].split(":")
-        _host = info[0]
-        _port = info[1] if len(info) > 1 else 6379
-        rds = StrictRedis(host=_host, port=_port, db=1, socket_keepalive=10, socket_connect_timeout=10)
+        rds = RedisPlus(db_space=1)
 
         usr_id = str(uuid.uuid4())
-        rds.set(usr_id, value=js.dumps({"email": fetch_request["email"]}), ex=3 * 24 * 60 * 60)
+        adm_service.save_invite_data(
+            usr_id,
+            value=js.to_str({"email": fetch_request["email"]}),
+            ex=3 * 24 * 60 * 60,
+        )
 
         self.set_message(req, f"记录成功: {usr_id}")
 
@@ -212,7 +213,7 @@ class SSAdm(LoginRequiredMixin):
             o.get_all_containers()
 
             # patch user
-            username = json.loads(o.mapping[c_id])["user"]
+            username = js.load_json(o.mapping[c_id])["user"]
             o = SocksVendor(username)
 
         lost_container = [i for i in o.get_user_containers() if i["container_id"] == c_id][0]
@@ -278,29 +279,24 @@ class FTWAdm(SSAdm):
         oS = SocksVendor(username)
         oV = V2rayVendor(username)
 
-        data_oV = []
         if super_admin:
-            data_oS = oS.get_all_containers()
-            list(map(lambda x: x.update({"type": "ss"}), data_oS))
-            data_oV = [_cover_v2ray_style_to_socks_style(item) for item in oV._get_all_users()]
-            list(map(lambda x: x.update({"type": "v2ray"}), data_oV))
+            sock_data = oS.get_all_containers()
+            v2ray_data = oV._get_all_users()
 
         else:
-            data_oS = oS.get_user_containers()
-            list(map(lambda x: x.update({"type": "ss"}), data_oS))
+            sock_data = oS.get_user_containers()
+            v2ray_data = oV.info and [oV.info] or []
 
-            if oV.info:
-                data_oV = [_cover_v2ray_style_to_socks_style(oV.info)]
-                list(map(lambda x: x.update({"type": "v2ray"}), data_oV))
+        data = v2ray_data and V2raySchema().dump(v2ray_data, many=True) or []
+        data += SockSchema().dump(sock_data, many=True)
 
-        data = data_oV + data_oS
         ctx = {
             "IP": environ.get("SERVER_IP", "127.0.0.1"),
             "user": {
                 "name": username,
                 "is_admin": super_admin,
             },
-            "ds": js.dumps(data),
+            "ds": js.to_str(data),
             "billboard": self.get_billboard_info(),
             "message": self.flush_message(req)
         }
@@ -316,20 +312,18 @@ class FTWAdm(SSAdm):
         socks_proxy = SocksVendor(username)
         v2ray_proxy = V2rayVendor(username)
 
-        socks_user_info = socks_proxy.get_all_containers() \
-            if super_admin \
-            else socks_proxy.get_user_containers()
-        __map_func__ = map(lambda d: d.update({"type": "ss"}), socks_user_info)
-        __call_map_func__ = list(__map_func__)
+        if super_admin:
+            sock_data = socks_proxy.get_all_containers()
+            v2ray_data = v2ray_proxy._get_all_users()
 
-        v2ray_user_info = [v2ray_proxy.info] \
-            if not super_admin \
-            else list(map(_cover_v2ray_style_to_socks_style, v2ray_proxy._get_all_users()))
-        __map_func__ = map(lambda d: d.update({"type": "v2ray"}), v2ray_user_info)
-        __call_map_func__ = list(__map_func__)
-        show_info = v2ray_user_info + socks_user_info if not super_admin else socks_user_info + v2ray_user_info
+        else:
+            sock_data = socks_proxy.get_user_containers()
+            v2ray_data = v2ray_proxy.info and [v2ray_proxy.info] or []
 
-        return JsonResponse(dict(rv=show_info))
+        data = v2ray_data and V2raySchema().dump(v2ray_data, many=True) or []
+        data += SockSchema().dump(sock_data, many=True)
+
+        return JsonResponse(dict(rv=data))
 
     @staticmethod
     def get_billboard_info(*args, **kwargs):

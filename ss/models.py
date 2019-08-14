@@ -32,7 +32,6 @@ class Billboard(models.Model):
     def __str__(self):
         return "<%s @%#x>" % (self.__class__.__name__, id(self))
 
-
     class Meta:
         verbose_name_plural = "公告"
         # index_together = ["id", "created"]
@@ -90,7 +89,6 @@ class V2rayTemplate(models.Model):
         self.content = json.dumps(data_dict)
 
         super(V2rayTemplate, self).save(*args, **kwargs)
-
 
     class Meta:
         verbose_name_plural = "V2ray Config"

@@ -1,23 +1,14 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-import warnings
-from os import environ
-
 from django.apps import AppConfig
 from django.db.models.signals import post_save
-
-
-__redis_info__ = environ.get("REDIS", "").split(":")
 
 
 class SsConfig(AppConfig):
     name = 'ss'
 
-    rds_host = __redis_info__[0]
-    if not rds_host:
-        warnings.warn(("redis is unset in env.",))
-    rds_port = __redis_info__[1] if len(__redis_info__) > 1 else 6379
+    redis_db_space = 1
 
     def ready(self):
         from . import signals

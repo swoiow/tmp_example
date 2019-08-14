@@ -21,11 +21,12 @@
           </el-col>
           <el-col :span="6">
             <div>{{ user.name }}:
-              <a href="/adm/logout" title="click to logout"> 登出 </a>
+              <a href="/adm/logout/" title="click to logout"> 登出 </a>
             </div>
           </el-col>
         </el-row>
       </el-header>
+
       <el-container>
 
         <el-aside width="200px" style="background-color: rgb(238, 241, 246); padding-left:10px">
@@ -51,58 +52,57 @@
         <el-container>
           <el-main>
             <el-table
-                    :data="tableData">
+                :data="tableData"
+                style="width: 100%">
+              <el-table-column type="expand">
+                <template slot-scope="props">
+                  <el-form label-position="left" inline class="demo-table-expand">
+                    <el-form-item label="容器 ID">
+                      <span>[[ props.row.container_id ]]</span>
+                    </el-form-item>
+                    <el-form-item label="拥有者">
+                      <span>[[ props.row.user ]]</span>
+                    </el-form-item>
+                    <el-form-item label="密码">
+                      <span>[[ props.row.pwd ]]</span>
+                    </el-form-item>
+                    <el-form-item label="加密方式">
+                      <span>[[ props.row.method ]]</span>
+                    </el-form-item>
+                    <el-form-item label="安全强化">
+                      <span>[[ props.row.more_sec ]]</span>
+                    </el-form-item>
+                  </el-form>
+                </template>
+              </el-table-column>
+
               <el-table-column
-                      prop="create"
-                      label="创建时间"
-                      width="120">
+                  prop="create"
+                  label="创建时间"
+                  width="120">
               </el-table-column>
               <el-table-column
-                      prop="container_id"
-                      label="容器ID"
-                      width="120">
+                  prop="user"
+                  label="拥有者"
+                  width="100">
               </el-table-column>
               <el-table-column
-                      prop="user"
-                      label="拥有者"
-                      width="100">
+                  prop="type"
+                  label="类型"
+                  width="60">
               </el-table-column>
               <el-table-column
-                      prop="pwd"
-                      label="密码"
-                      width="140">
-              </el-table-column>
-              <el-table-column
-                      prop="method"
-                      label="加密方式"
-                      width="120">
-              </el-table-column>
-              <el-table-column
-                      prop="port"
-                      label="端口"
-                      width="100">
-              </el-table-column>
-              <el-table-column
-                      prop="more_sec"
-                      label="安全强化"
-                      width="80">
-              </el-table-column>
-              <el-table-column
-                      prop="type"
-                      label="类型"
-                      width="60">
-              </el-table-column>
-              <el-table-column
-                      prop="note"
-                      label="备注"
-                      width="140">
+                  prop="note"
+                  label="备注"
+                  width="150">
               </el-table-column>
 
               <el-table-column label="操作">
                 <template slot="header" slot-scope="slot">
                   {#操作#}
                   <el-dropdown type="primary" size="mini" style="color: #409EFF;">
-                    <span class="el-dropdown-link">新建<i class="el-icon-arrow-down el-icon--right"></i></span>
+                                        <span class="el-dropdown-link">新建<i
+                                            class="el-icon-arrow-down el-icon--right"></i></span>
                     <el-dropdown-menu slot="dropdown">
                       <el-dropdown-item @click.native="createSS(0)"
                                         title="新建一个 SS 容器"
@@ -141,9 +141,9 @@
                     <el-button size="mini" @click="transfer(slotProps.row)" plain>
                       转移
                     </el-button>
-                    <el-button size="mini" plain>
-                      安全强化
-                    </el-button>
+                    {#                    <el-button size="mini" plain>#}
+                    {#                      安全强化#}
+                    {#                    </el-button>#}
                   {% endif %}
                   <el-button size="mini" plain @click="openQR(slotProps.row)">
                     二维码
@@ -155,6 +155,7 @@
           <el-footer>
           </el-footer>
         </el-container>
+
       </el-container>
     </el-container>
 
@@ -187,14 +188,15 @@
           integrity="sha384-Dr98ddmUw2QkdCarNQ+OL7xLty7cSxgR0T7v1tq4UErS/qLV0132sBYTolRAFuOV"
           crossorigin="anonymous"></script>
   <script>
-      let Main = {
+      let enc = [null, "rc4-md5", "aes-128-gcm", "aes-192-gcm", "aes-256-gcm", "aes-128-cfb", "aes-192-cfb", "aes-256-cfb", "aes-128-ctr", "aes-192-ctr", "aes-256-ctr", "camellia-128-cfb", "camellia-192-cfb", "camellia-256-cfb", "bf-cfb", "chacha20-ietf-poly1305", "xchacha20-ietf-poly1305", "salsa20", "chacha20", "chacha20-ietf",];
+      var Main = {
+          delimiters: ['[[', ']]'],
           el: '#content',
-
           data() {
               return {
                   loading: false,
 
-                  encrypt_method: [null, "rc4-md5", "aes-128-gcm", "aes-192-gcm", "aes-256-gcm", "aes-128-cfb", "aes-192-cfb", "aes-256-cfb", "aes-128-ctr", "aes-192-ctr", "aes-256-ctr", "camellia-128-cfb", "camellia-192-cfb", "camellia-256-cfb", "bf-cfb", "chacha20-ietf-poly1305", "xchacha20-ietf-poly1305", "salsa20", "chacha20", "chacha20-ietf",],
+                  encrypt_method: enc,
                   ip: "{{ IP }}",
                   tableData: JSON.parse('{{ ds|safe }}'),
                   message: "{{ message }}",
@@ -347,6 +349,8 @@
 
       window.onload = function () {
           new Vue(Main)
+          {#var Ctor = Vue.extend(Main)#}
+          {#new Ctor().$mount('#content')#}
       }
   </script>
 {% endblock %}
@@ -365,6 +369,22 @@
 
     .el-table--scrollable-x div > .el-button {
       margin-top: .5em
+    }
+  </style>
+  <style>
+    .demo-table-expand {
+      font-size: 0;
+    }
+
+    .demo-table-expand label {
+      width: 90px;
+      color: #99a9bf;
+    }
+
+    .demo-table-expand .el-form-item {
+      margin-right: 0;
+      margin-bottom: 0;
+      width: 50%;
     }
   </style>
 {% endblock %}

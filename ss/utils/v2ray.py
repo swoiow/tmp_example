@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 
 import datetime as dt
-import json
 import random
 import traceback
 import uuid
@@ -10,24 +9,23 @@ from os import environ, path
 from typing import Dict, List
 
 import docker
-import simplejson as js
-from redis import StrictRedis
 
-from ss.utils.shadowsocks import get_docker_client
+from vendor.redis import RedisPlus
+from vendor.utils import get_docker_client
+from vendor.utils import js
 from .w2d import Web2Docker
-
 
 config_path = environ.get("CONFIG_SERVER", "config-server.json")
 
 if path.isfile(config_path):
     with open(config_path, "rb") as rf:
-        server_config = json.load(rf)
+        server_config = js.load_json(rf)
 
 
 def generate_user(usr: str) -> Dict:
     data = {
         "id": str(uuid.uuid4()),
-        "alterId": random.randint(4, 32),
+        "alterId": random.randint(4, 18),
         "_metadata": {
             "usr": usr,
             "ct": dt.datetime.today().strftime("%Y-%m-%d")
@@ -39,7 +37,7 @@ def generate_user(usr: str) -> Dict:
 def update_config(config: Dict, users: List[Dict]) -> Dict:
     inbounds = config["inbounds"]
     for items in inbounds:
-        clients = items["settings"]["clients"]
+        clients = items["settings"].get("clients", [])
 
         clients.extend(users)
         items["settings"]["clients"] = clients
@@ -52,19 +50,19 @@ class Web2DockerMiddleWare(Web2Docker):
     _container_name = "django-v2ray"
 
     def __init__(self, user):
-        info = environ["REDIS"].split(":")
-        _host = info[0]
-        _port = info[1] if len(info) > 1 else 6379
-
         self.user = user
         self.usr_rds_key = f"{self._rds_flag}{self.user}"
 
-        self.rds = StrictRedis(host=_host, port=_port, socket_keepalive=10, charset="utf-8", decode_responses=True, )
+        self.rds = RedisPlus(
+            db_space=1,
+            charset="utf-8",
+            decode_responses=True
+        )
 
     @property
     def info(self):
         rds_data = self.rds.get(f"{self.usr_rds_key}")
-        return self.from_json(rds_data)
+        return self.from_json(rds_data or "{}")
 
     def create(self):
         user_data = self.rds.get(self.usr_rds_key)
@@ -115,15 +113,15 @@ class Web2DockerMiddleWare(Web2Docker):
         config = kwargs.get("confg_template")
         if not config:
             return "服务端模板没定义或没开启"
-        config = json.loads(config)
+        config = js.load_json(config)
 
         users_data = list(self._get_all_users())
         if not users_data:
             return "没有任何的用户数据，中止创建"
 
         config = update_config(config, users_data)
-        str_config = js.dumps(config, separators=(",", ":"))
-        double_encode = js.dumps(str_config)
+        str_config = js.dump_json(config, separators=(",", ":"))
+        double_encode = js.dump_json(str_config)
 
         command = f"v2ray -test -config=stdin: <<< '{str_config}'"
         client = get_docker_client()
@@ -146,8 +144,8 @@ class Web2DockerMiddleWare(Web2Docker):
                 # tty=True,  # this param is for stdin
                 ulimits=[{
                     "name": "nofile",
-                    "soft": 20000,
-                    "hard": 40000
+                    "soft": 65535,
+                    "hard": 65535
                 }, {
                     "name": "nproc",
                     "soft": 65535,

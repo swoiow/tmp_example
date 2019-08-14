@@ -5,7 +5,7 @@ from django.contrib.auth.models import User
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from . import models
+from . import services
 
 
 @receiver(post_save, sender=User)
@@ -13,5 +13,4 @@ def init_extra(sender, *args, **kwargs):
     user = kwargs["instance"]
 
     if kwargs["created"]:
-        docker_extra = models.DockerExtra(user=user)
-        docker_extra.save()
+        services.init_docker_extra_for_new_user(user)

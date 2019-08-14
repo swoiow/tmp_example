@@ -3,128 +3,128 @@
 {% block title %} 受邀注册 {% endblock %}
 
 {% block body %}
-    <el-container>
-        <el-header></el-header>
+  <el-container>
+    <el-header></el-header>
 
-        <el-main id="app">
-            <el-row :gutter="20">
-                <el-col :span="12" :offset="5">
-                    <el-form :model="ruleForm2" status-icon :rules="rules2" ref="ruleForm2" label-width="100px"
-                             class="demo-ruleForm">
-                        {% csrf_token %}
-                        <el-form-item label="用户名" prop="usr">
-                            <el-input v-model="ruleForm2.usr" name="usr"></el-input>
-                        </el-form-item>
-                        <el-form-item label="邮箱" prop="email">
-                            <el-input v-model="ruleForm2.email" disabled></el-input>
-                        </el-form-item>
-                        <el-form-item label="密码" prop="pwd">
+    <el-main id="app">
+      <el-row :gutter="20">
+        <el-col :span="12" :offset="5">
+          <el-form :model="ruleForm2" status-icon :rules="rules2" ref="ruleForm2" label-width="100px"
+                   class="demo-ruleForm">
+            {% csrf_token %}
+            <el-form-item label="用户名" prop="usr">
+              <el-input v-model="ruleForm2.usr" name="usr"></el-input>
+            </el-form-item>
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="ruleForm2.email" disabled></el-input>
+            </el-form-item>
+            <el-form-item label="密码" prop="pwd">
 
-                            <el-input type="password" v-model="ruleForm2.pwd" name="pwd" autocomplete="off"></el-input>
-                        </el-form-item>
-                        <el-form-item label="确认密码" prop="checkPass">
-                            <el-input type="password" v-model="ruleForm2.checkPass" autocomplete="off"></el-input>
-                        </el-form-item>
+              <el-input type="password" v-model="ruleForm2.pwd" name="pwd" autocomplete="off"></el-input>
+            </el-form-item>
+            <el-form-item label="确认密码" prop="checkPass">
+              <el-input type="password" v-model="ruleForm2.checkPass" autocomplete="off"></el-input>
+            </el-form-item>
 
-                        <el-form-item>
-                            <el-button type="primary" @click="submitForm('ruleForm2')">提交</el-button>
-                            {#                            <el-button type="primary" native-type='submit'>提交</el-button>#}
-                            <el-button @click="resetForm('ruleForm2')">重置</el-button>
-                        </el-form-item>
-                    </el-form>
-                </el-col>
-            </el-row>
-        </el-main>
+            <el-form-item>
+              <el-button type="primary" @click="submitForm('ruleForm2')">提交</el-button>
+              {#                            <el-button type="primary" native-type='submit'>提交</el-button>#}
+              <el-button @click="resetForm('ruleForm2')">重置</el-button>
+            </el-form-item>
+          </el-form>
+        </el-col>
+      </el-row>
+    </el-main>
 
-        <el-footer></el-footer>
-    </el-container>
+    <el-footer></el-footer>
+  </el-container>
 {% endblock %}
 
 {% block js %}
-    <script>
-        let Main = {
-            el: '#app',
+  <script>
+      let Main = {
+          el: '#app',
 
-            data() {
-                var checkUsr = (rule, value, callback) => {
-                    if (!value) {
-                        return callback(new Error('用户名不能为空'));
-                    }
-                    callback();
-                };
-                var validatePass = (rule, value, callback) => {
-                    if (value === '') {
-                        callback(new Error('请输入密码'));
-                    } else {
-                        if (this.ruleForm2.checkPass !== '') {
-                            this.$refs.ruleForm2.validateField('checkPass');
-                        }
-                        callback();
-                    }
-                };
-                var validatePass2 = (rule, value, callback) => {
-                    if (value === '') {
-                        callback(new Error('请再次输入密码'));
-                    } else if (value !== this.ruleForm2.pwd) {
-                        callback(new Error('两次输入密码不一致!'));
-                    } else {
-                        callback();
-                    }
-                };
-                return {
-                    ruleForm2: {
-                        usr: '',
-                        pwd: '',
-                        checkPass: '',
-                        email: "{{ email }}",
-                    },
-                    rules2: {
-                        pass: [
-                            {validator: validatePass, trigger: 'blur'}
-                        ],
-                        checkPass: [
-                            {validator: validatePass2, trigger: 'blur'}
-                        ],
-                        username: [
-                            {validator: checkUsr, trigger: 'blur'}
-                        ]
-                    }
-                };
-            },
-            methods: {
-                submitForm(formName) {
-                    let vm = this;
-                    vm.$refs[formName].validate((valid) => {
-                        if (valid) {
-                            axios({
-                                method: 'post',
-                                url: window.location.href,
-                                headers: {
-                                    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-                                    'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
-                                },
-                                data: qs(vm.$data.ruleForm2)
-                            })
-                                .then(function (response) {
-                                    return window.location.href = response.request.responseURL
-                                })
-                        } else {
-                            vm.$notify({
-                                title: '注意',
-                                type: 'error',
-                                message: "请检查表单!",
-                            });
-                            return false;
-                        }
-                    });
-                },
-                resetForm(formName) {
-                    this.$refs[formName].resetFields();
-                }
-            }
-        };
-        window.onload = function () {
-            new Vue(Main)
-        }
-    </script>
+          data() {
+              var checkUsr = (rule, value, callback) => {
+                  if (!value) {
+                      return callback(new Error('用户名不能为空'));
+                  }
+                  callback();
+              };
+              var validatePass = (rule, value, callback) => {
+                  if (value === '') {
+                      callback(new Error('请输入密码'));
+                  } else {
+                      if (this.ruleForm2.checkPass !== '') {
+                          this.$refs.ruleForm2.validateField('checkPass');
+                      }
+                      callback();
+                  }
+              };
+              var validatePass2 = (rule, value, callback) => {
+                  if (value === '') {
+                      callback(new Error('请再次输入密码'));
+                  } else if (value !== this.ruleForm2.pwd) {
+                      callback(new Error('两次输入密码不一致!'));
+                  } else {
+                      callback();
+                  }
+              };
+              return {
+                  ruleForm2: {
+                      usr: '',
+                      pwd: '',
+                      checkPass: '',
+                      email: "{{ email }}",
+                  },
+                  rules2: {
+                      pass: [
+                          {validator: validatePass, trigger: 'blur'}
+                      ],
+                      checkPass: [
+                          {validator: validatePass2, trigger: 'blur'}
+                      ],
+                      username: [
+                          {validator: checkUsr, trigger: 'blur'}
+                      ]
+                  }
+              };
+          },
+          methods: {
+              submitForm(formName) {
+                  let vm = this;
+                  vm.$refs[formName].validate((valid) => {
+                      if (valid) {
+                          axios({
+                              method: 'post',
+                              url: window.location.href,
+                              headers: {
+                                  "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+                                  'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+                              },
+                              data: qs(vm.$data.ruleForm2)
+                          })
+                              .then(function (response) {
+                                  return window.location.href = response.request.responseURL
+                              })
+                      } else {
+                          vm.$notify({
+                              title: '注意',
+                              type: 'error',
+                              message: "请检查表单!",
+                          });
+                          return false;
+                      }
+                  });
+              },
+              resetForm(formName) {
+                  this.$refs[formName].resetFields();
+              }
+          }
+      };
+      window.onload = function () {
+          new Vue(Main)
+      }
+  </script>
 {% endblock %}
