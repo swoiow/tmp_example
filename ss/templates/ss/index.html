@@ -267,7 +267,7 @@
                   let vm = this
                   vm.$data.loading = true
 
-                  if (dom.type === "v2ray") {
+                  if (dom.type === "vmess") {
                       vm.deleteV2ray(dom.user).then(() => {
                           vm.$data.loading = false
                       })
