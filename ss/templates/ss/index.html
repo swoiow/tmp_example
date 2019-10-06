@@ -60,17 +60,20 @@
                     <el-form-item label="容器 ID">
                       <span>[[ props.row.container_id ]]</span>
                     </el-form-item>
-                    <el-form-item label="拥有者">
-                      <span>[[ props.row.user ]]</span>
-                    </el-form-item>
                     <el-form-item label="密码">
                       <span>[[ props.row.pwd ]]</span>
+                    </el-form-item>
+                    <el-form-item label="拥有者">
+                      <span>[[ props.row.user ]]</span>
                     </el-form-item>
                     <el-form-item label="加密方式">
                       <span>[[ props.row.method ]]</span>
                     </el-form-item>
                     <el-form-item label="安全强化">
                       <span>[[ props.row.more_sec ]]</span>
+                    </el-form-item>
+                    <el-form-item label="端口">
+                      <span>[[ props.row.port ]]</span>
                     </el-form-item>
                   </el-form>
                 </template>
@@ -145,8 +148,8 @@
                     {#                      安全强化#}
                     {#                    </el-button>#}
                   {% endif %}
-                  <el-button size="mini" plain @click="openQR(slotProps.row)">
-                    二维码
+                  <el-button size="mini" plain @click="showConfig(slotProps.row)">
+                    配置文件
                   </el-button>
                 </template>
               </el-table-column>
@@ -305,6 +308,29 @@
                           message: "请求删除出错",
                       })
                   }
+              },
+
+              showConfig: function (dom) {
+                  switch (dom.type) {
+                      case "ss":
+                          this.openQR(dom)
+                          break;
+
+                      case "vmess":
+                          this.downConfig()
+                          break;
+
+                      default:
+                          vm.$notify({
+                              title: 'Tips',
+                              type: 'error',
+                              message: "请求显示配置出错",
+                          })
+                  }
+              },
+
+              downConfig: function () {
+                  window.open("/c/v2ray?as_file")
               },
 
               openQR: function (dom) {

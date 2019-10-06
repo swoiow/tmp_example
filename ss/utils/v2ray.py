@@ -5,7 +5,7 @@ import datetime as dt
 import random
 import traceback
 import uuid
-from os import environ, path
+from os import path, environ
 from typing import Dict, List
 
 import docker
@@ -14,12 +14,6 @@ from vendor.redis import RedisPlus
 from vendor.utils import get_docker_client
 from vendor.utils import js
 from .w2d import Web2Docker
-
-config_path = environ.get("CONFIG_SERVER", "config-server.json")
-
-if path.isfile(config_path):
-    with open(config_path, "rb") as rf:
-        server_config = js.load_json(rf)
 
 
 def generate_user(usr: str) -> Dict:
@@ -47,7 +41,7 @@ def update_config(config: Dict, users: List[Dict]) -> Dict:
 
 class Web2DockerMiddleWare(Web2Docker):
     _rds_flag = "v2ray|"
-    _container_name = "django-v2ray"
+    _container_name = "django_v2ray"
 
     def __init__(self, user):
         self.user = user
@@ -107,7 +101,7 @@ class Web2DockerMiddleWare(Web2Docker):
             https://github.com/v2ray/discussion/issues/11
 
             echo '{"inbounds": [{"port": 12345, "protocol": "vmess", "settings": {"clients": []}, "streamSettings": {"network": "ws", "wsSettings": {"path": "/service-path/"}}}], "outbounds": [{"protocol": "freedom", "settings": {}}]}' |  dk run -i  v2ray  v2ray  -config=stdin: cat -
-            docker run -i v2ray v2ray -test -config=stdin: <<< '{"inbounds": [{"port": 12345, "protocol": "vmess", "settings": {"clients": []}, "streamSettings": {"network": "ws", "wsSettings": {"path": "/service-path/"}}}], "outbounds": [{"protocol": "freedom", "settings": {}}]}'
+            docker run -i v2ray v2ray -config=stdin: <<< '{"log": {"loglevel": "debug", "access": "", "error": ""}, "inbounds": [{"port": 12345, "protocol": "vmess", "settings": {"clients": []}, "streamSettings": {"network": "ws", "wsSettings": {"path": "/service-path/"}}}], "outbounds": [{"protocol": "freedom", "settings": {}}]}'
         """
 
         config = kwargs.get("confg_template")
@@ -120,14 +114,18 @@ class Web2DockerMiddleWare(Web2Docker):
             return "没有任何的用户数据，中止创建"
 
         config = update_config(config, users_data)
-        str_config = js.dump_json(config, separators=(",", ":"))
-        double_encode = js.dump_json(str_config)
 
-        command = f"v2ray -test -config=stdin: <<< '{str_config}'"
+        fp, fn = self._create_config_file(config)
+        vfp = path.join("/etc", fn)
+        # str_config = js.dump_json(config, separators=(",", ":"))
+        # double_encode = js.dump_json(str_config)
+
+        command = f"v2ray -config={vfp}"
         client = get_docker_client()
 
         try:
-            client.containers.run(
+            api_client = client.api
+            container = api_client.create_container(
                 image="pylab/v2ray",
                 name=self._container_name,
                 command=command,
@@ -135,28 +133,38 @@ class Web2DockerMiddleWare(Web2Docker):
                 detach=True,
                 # auto_remove=True,
                 # remove=True,
-                ports={
-                    "1090/tcp": ("0.0.0.0", 1090),
-                    "1090/udp": ("0.0.0.0", 1090),
-                },
-                dns_opt=["1.1.1.1", "8.8.8.8"],
-                stdin_open=True,
-                # tty=True,  # this param is for stdin
-                ulimits=[{
-                    "name": "nofile",
-                    "soft": 65535,
-                    "hard": 65535
-                }, {
-                    "name": "nproc",
-                    "soft": 65535,
-                    "hard": 65535
-                }],
+                ports=["1080"],
+                # stdin_open=True,
+                volumes=[f"{vfp}"],
                 labels={
                     "owner": "system",
                     "created": dt.datetime.today().strftime("%Y-%m-%d")
                 },
-            )
+                # tty=True,  # this param is for stdin
 
+                host_config=api_client.create_host_config(
+                    binds=[
+                        f"{fp}:{vfp}:ro"
+                    ],
+                    port_bindings={
+                        1080: ("127.0.0.1", 61090)
+                    },
+                    dns_opt=["1.1.1.1", "8.8.8.8"],
+
+                    ulimits=[{
+                        "name": "nofile",
+                        "soft": 65535,
+                        "hard": 65535
+                    }, {
+                        "name": "nproc",
+                        "soft": 65535,
+                        "hard": 65535
+                    }],
+                ),
+            )
+            api_client.start(container)
+
+            print(api_client.logs(container))
             return True
 
         except docker.errors.APIError:
@@ -173,3 +181,15 @@ class Web2DockerMiddleWare(Web2Docker):
             rds_data = self.rds.get(user_key)
             rds_data = self.from_json(rds_data)
             yield rds_data
+
+    @staticmethod
+    def _create_config_file(config):
+        fn = "v2ray_srv_config.json"
+        fp = path.join(environ.get("V2RAY_CONFIG_DIR", "/etc"), fn)
+        with open(fp, "w") as wf:
+            js.to_str(
+                config, fp=wf,
+                indent=2, sort_keys=True,
+            )
+
+        return fp, fn

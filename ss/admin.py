@@ -8,6 +8,10 @@ from django.contrib.auth.models import User
 from . import models
 
 
+class V2rayConfigAdmin(admin.ModelAdmin):
+    list_display = ("id", "title", "created", "type", "used")
+
+
 class BillboardAdmin(admin.ModelAdmin):
     list_display = ("id", "title", "created")
     search_fields = ("title", "content")
@@ -26,7 +30,7 @@ class UserAdmin(BaseUserAdmin):
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
 admin.site.register(models.Billboard, BillboardAdmin)
-admin.site.register(models.V2rayTemplate, BillboardAdmin)
+admin.site.register(models.V2rayTemplate, V2rayConfigAdmin)
 
 from os import environ
 

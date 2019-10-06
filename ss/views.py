@@ -31,8 +31,30 @@ class V2rayAdm(LoginRequiredMixin):
         user = request.user
         username = user.username
         o = V2rayVendor(username)
+        result = o.info
+        if result:
+            result["security"] = "aes-128-gcm"
 
-        return JsonResponse(dict(result=o.info))
+            try:
+                default_config = V2rayTemplate.objects \
+                    .filter(used=True) \
+                    .filter(type=V2rayTemplate.CLIENT) \
+                    .order_by("-created") \
+                    .latest("id")
+            except Exception:
+                pass
+            else:
+                result = default_config.content.replace('"@USER@"', js.to_str(result))
+                result = js.from_str(result)
+
+        result_in_str = js.to_str(result, indent=2, sort_keys=True)
+        if "as_file" in request.GET:
+            response = HttpResponse(result_in_str, content_type='text/plain')
+            response['Content-Disposition'] = 'attachment; filename="config.json"'
+        else:
+            response = HttpResponse(result_in_str, content_type="application/json")
+
+        return response
 
     def put(self, req, *args, **kwargs):
         user = req.user
@@ -83,12 +105,14 @@ class V2rayAdm(LoginRequiredMixin):
                 .order_by("-created") \
                 .latest("id")
         except IndexError:
-            return JsonResponse({"result", "IndexError"})
+            # return JsonResponse({"result", "IndexError"})
+            req.session["msg_box"] = "重启结果: IndexError"
 
-        o = V2rayVendor(username)
-        result = o.restart(confg_template=default_config.content)
+        else:
+            o = V2rayVendor(username)
+            result = o.restart(confg_template=default_config.content)
 
-        req.session["msg_box"] = f"重启结果: {result}"
+            req.session["msg_box"] = f"重启结果: {result}"
 
         resp = HttpResponse()
         resp["Location"] = "/c/ss"
