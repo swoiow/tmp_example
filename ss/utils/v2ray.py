@@ -153,12 +153,12 @@ class Web2DockerMiddleWare(Web2Docker):
 
                     ulimits=[{
                         "name": "nofile",
-                        "soft": 65535,
-                        "hard": 65535
+                        "soft": 51200,
+                        "hard": 51200*2
                     }, {
                         "name": "nproc",
-                        "soft": 65535,
-                        "hard": 65535
+                        "soft": 51200,
+                        "hard": 51200*2
                     }],
                 ),
             )
