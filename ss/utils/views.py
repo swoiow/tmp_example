@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin as _LoginRequiredMixin
 from django.views.generic import View as _djangoView
 
 
-class View(object):
+class MessageView(object):
 
     def set_message(self, request, message, *args, **kwargs):
         request.session["msg_box"] = message
@@ -14,5 +14,5 @@ class View(object):
         return "msg_box" in request.session and request.session.pop("msg_box")
 
 
-class LoginRequiredMixin(View, _LoginRequiredMixin, _djangoView):
+class LoginRequiredMixin(MessageView, _LoginRequiredMixin, _djangoView):
     pass

@@ -119,6 +119,12 @@
                         V2ray 容器
                       </el-dropdown-item>
 
+                        <el-dropdown-item @click.native="rebootV2()"
+                                          title="重启 V2ray"
+                                          plain>
+                            Reboot V2ray
+                        </el-dropdown-item>
+
                       <el-dropdown-item divided
                                         type="danger"
                                         icon="el-icon-delete"
@@ -361,6 +367,10 @@
                   return axios.put("/c/v2ray", {}).then(() => {
                       vm.$data.loading = false
                   })
+              },
+
+              rebootV2: function () {
+                  window.location.href = '/c/api/v2ray_restart'
               },
 
               deleteV2ray: function (user) {

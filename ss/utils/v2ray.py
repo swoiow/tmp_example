@@ -11,15 +11,16 @@ from typing import Dict, List
 import docker
 
 from vendor.redis import RedisPlus
-from vendor.utils import get_docker_client
-from vendor.utils import js
+from vendor.utils import get_docker_client, js
 from .w2d import Web2Docker
+from .. import apps
 
 
 def generate_user(usr: str) -> Dict:
     data = {
         "id": str(uuid.uuid4()),
         "alterId": random.randint(4, 18),
+        "security": "auto",
         "_metadata": {
             "usr": usr,
             "ct": dt.datetime.today().strftime("%Y-%m-%d")
@@ -41,7 +42,7 @@ def update_config(config: Dict, users: List[Dict]) -> Dict:
 
 class Web2DockerMiddleWare(Web2Docker):
     _rds_flag = "v2ray|"
-    _container_name = "django_v2ray"
+    _container_name = "web2net"
 
     def __init__(self, user):
         self.user = user
@@ -126,7 +127,7 @@ class Web2DockerMiddleWare(Web2Docker):
         try:
             api_client = client.api
             container = api_client.create_container(
-                image="pylab/v2ray",
+                image="net",
                 name=self._container_name,
                 command=command,
                 user="nobody",
@@ -143,22 +144,23 @@ class Web2DockerMiddleWare(Web2Docker):
                 # tty=True,  # this param is for stdin
 
                 host_config=api_client.create_host_config(
+                    shm_size="300M",
                     binds=[
                         f"{fp}:{vfp}:ro"
                     ],
                     port_bindings={
                         1080: ("127.0.0.1", 61090)
                     },
-                    dns_opt=["1.1.1.1", "8.8.8.8"],
+                    dns_opt=apps.DNS,
 
                     ulimits=[{
                         "name": "nofile",
-                        "soft": 51200,
-                        "hard": 51200*2
+                        "soft": apps.ULIMITS_SOFT,
+                        "hard": apps.ULIMITS_HARD,
                     }, {
                         "name": "nproc",
-                        "soft": 51200,
-                        "hard": 51200*2
+                        "soft": apps.ULIMITS_SOFT,
+                        "hard": apps.ULIMITS_HARD,
                     }],
                 ),
             )

@@ -7,7 +7,7 @@ from os import environ
 import docker
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import render, redirect
 
 import adm.services as adm_service
 from ss.utils import SocksVendor, V2rayVendor
@@ -114,9 +114,7 @@ class V2rayAdm(LoginRequiredMixin):
 
             req.session["msg_box"] = f"重启结果: {result}"
 
-        resp = HttpResponse()
-        resp["Location"] = "/c/ss"
-        return resp
+        return redirect("/c/ss")
 
 
 class SSAdm(LoginRequiredMixin):
