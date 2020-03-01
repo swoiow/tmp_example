@@ -6,7 +6,7 @@ from django.db.models.signals import post_save
 
 
 class SsConfig(AppConfig):
-    name = 'ss'
+    name = 'ftw'
 
     redis_db_space = 1
 

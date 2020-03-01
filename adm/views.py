@@ -4,7 +4,7 @@
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect, render
 
-from vendor.exceptions import exceptions
+from vendor import exceptions
 from . import services
 
 
@@ -39,4 +39,4 @@ def index(request, *args, **kwargs):
 
         return redirect('/adm')
 
-    return exceptions.CodeInAvailable
+    return exceptions.CodeUnAvailable

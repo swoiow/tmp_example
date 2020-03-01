@@ -10,10 +10,10 @@ from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
 
 import adm.services as adm_service
-from ss.utils import SocksVendor, V2rayVendor
-from ss.utils.schema import SockSchema, V2raySchema
-from ss.utils.shadowsocks import run_ss_server
-from ss.utils.views import LoginRequiredMixin
+from ftw.utils import SocksVendor, V2rayVendor
+from ftw.utils.schema import SockSchema, V2raySchema
+from ftw.utils.shadowsocks import run_ss_server
+from ftw.utils.views import LoginRequiredMixin
 from vendor.redis import RedisPlus
 from vendor.utils import js, get_docker_client
 from .models import Billboard, V2rayTemplate
@@ -68,7 +68,7 @@ class V2rayAdm(LoginRequiredMixin):
         self.set_message(req, "创建结果: %s" % (result and "已成功" or "已存在"))
 
         resp = HttpResponse()
-        resp["Location1"] = "/c/ss"
+        resp["Location1"] = "/c/ftw"
         return resp
 
     def delete(self, req, *args, **kwargs):
@@ -90,7 +90,7 @@ class V2rayAdm(LoginRequiredMixin):
         self.set_message(req, f"删除结果: {result}")
 
         resp = HttpResponse()
-        resp["Location1"] = "/c/ss"
+        resp["Location1"] = "/c/ftw"
         return resp
 
     @staticmethod
@@ -114,7 +114,7 @@ class V2rayAdm(LoginRequiredMixin):
 
             req.session["msg_box"] = f"重启结果: {result}"
 
-        return redirect("/c/ss")
+        return redirect("/c/ftw")
 
 
 class SSAdm(LoginRequiredMixin):
@@ -144,7 +144,7 @@ class SSAdm(LoginRequiredMixin):
             self.set_message(req, "超出配额数量, 或指令不被接受")
 
         resp = HttpResponse()
-        resp["Location1"] = "/c/ss"
+        resp["Location1"] = "/c/ftw"
         return resp
 
     def put(self, req, *args, **kwargs):
@@ -167,7 +167,7 @@ class SSAdm(LoginRequiredMixin):
         self.set_message(req, "当前用户已清空")
 
         resp = HttpResponse()
-        resp["Location1"] = "/c/ss"
+        resp["Location1"] = "/c/ftw"
         return resp
 
     def delete(self, req, *args, **kwargs):
@@ -200,7 +200,7 @@ class SSAdm(LoginRequiredMixin):
                     self.set_message(req, "容器不存在或已删除")
 
         resp = HttpResponse()
-        resp["Location1"] = "/c/ss"
+        resp["Location1"] = "/c/ftw"
         return resp
 
     def handle_action_invite(self, req, fetch_request, *args, **kwargs):
@@ -291,7 +291,7 @@ def _cover_v2ray_style_to_socks_style(data: dict) -> dict:
 
 
 class FTWAdm(SSAdm):
-    login_url = "/adm/login?next=/c/ss"
+    login_url = "/adm/login?next=/c/ftw"
 
     def get(self, req, *args, **kwargs):
         user = req.user
