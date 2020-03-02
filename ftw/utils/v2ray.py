@@ -42,7 +42,7 @@ def update_config(config: Dict, users: List[Dict]) -> Dict:
 
 class Web2DockerMiddleWare(Web2Docker):
     _rds_flag = "v2ray|"
-    _container_name = "web2net"
+    _container_name = apps.DEFAULT_V2RAY_CONTAINER_NAME
 
     def __init__(self, user):
         self.user = user

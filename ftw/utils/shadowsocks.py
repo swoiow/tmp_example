@@ -10,6 +10,7 @@ from typing import Dict, List
 
 import docker
 
+from ftw.apps import DEFAULT_SS_IMAGE
 from vendor.redis import RedisPlus
 from vendor.utils import get_docker_client, js
 from .w2d import Web2Docker
@@ -25,10 +26,8 @@ def random_port():
     return random.randint(30000, 63300)
 
 
-def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
+def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm"):
     client = get_docker_client()
-    if not img:
-        img = environ.get("SS_IMG", "pylab/shadowsocks-libev:latest")
 
     if not pwd:
         pwd = random_seed()
@@ -43,7 +42,7 @@ def run_ss_server(name, pwd=None, port=None, enc_mode="aes-128-gcm", img=None):
     container_port = random_port()
     extra = "-u --fast-open --reuse-port -t 80"
 
-    img_name = img
+    img_name = environ.get("SS_IMG", DEFAULT_SS_IMAGE)
     command = f"ss-server -s 0.0.0.0 -p {container_port} -k {pwd} -m {enc_mode} {extra}"
 
     try:

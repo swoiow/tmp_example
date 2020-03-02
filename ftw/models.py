@@ -10,6 +10,11 @@ from django.db.models import DEFERRED
 
 
 class Billboard(models.Model):
+    class Meta:
+        db_table = 'ss_billboard'
+        verbose_name_plural = "公告"
+        # index_together = ["id", "created"]
+
     DRAFT = 0
     PUBLIC = 1
     STATUS_CHOICES = (
@@ -32,18 +37,21 @@ class Billboard(models.Model):
     def __str__(self):
         return "<%s @%#x>" % (self.__class__.__name__, id(self))
 
-    class Meta:
-        verbose_name_plural = "公告"
-        # index_together = ["id", "created"]
-
 
 class DockerExtra(models.Model):
+    class Meta:
+        db_table = 'ss_dockerextra'
+
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     quota = models.IntegerField(verbose_name="允许容器数量", default=1)
 
 
 class V2rayTemplate(models.Model):
     # TODO: send signal
+
+    class Meta:
+        db_table = 'ss_v2raytemplate'
+        verbose_name_plural = "V2ray Config"
 
     CLIENT = "c"
     SERVER = "s"
@@ -89,6 +97,3 @@ class V2rayTemplate(models.Model):
         self.content = json.dumps(data_dict)
 
         super(V2rayTemplate, self).save(*args, **kwargs)
-
-    class Meta:
-        verbose_name_plural = "V2ray Config"
