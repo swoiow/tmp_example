@@ -19,7 +19,7 @@ from .. import apps
 def generate_user(usr: str) -> Dict:
     data = {
         "id": str(uuid.uuid4()),
-        "alterId": random.randint(4, 18),
+        "alterId": random.randint(32, 256),
         "security": "auto",
         "_metadata": {
             "usr": usr,
