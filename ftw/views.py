@@ -303,13 +303,13 @@ class FTWAdm(SSAdm):
 
         if super_admin:
             sock_data = oS.get_all_containers()
-            v2ray_data = oV._get_all_users()
+            v2ray_data = oV._get_all_users() or []
 
         else:
             sock_data = oS.get_user_containers()
             v2ray_data = oV.info and [oV.info] or []
 
-        data = v2ray_data and V2raySchema().dump(v2ray_data, many=True) or []
+        data = V2raySchema().dump(v2ray_data, many=True)
         data += SockSchema().dump(sock_data, many=True)
 
         ctx = {
