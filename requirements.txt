@@ -1,7 +1,7 @@
 redis==3.4.1
 Django==3.0.3
 django-oauth-toolkit
-simplejson==3.17.0
+git+git://github.com/esnme/ultrajson.git
 docker==4.2.0
 marshmallow==3.4.0
 fakeredis==1.2.1

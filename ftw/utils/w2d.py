@@ -5,7 +5,7 @@
 import json
 from typing import AnyStr, Dict
 
-import simplejson as js
+import ujson as sdt_json
 
 
 class Web2Docker(object):
@@ -20,7 +20,7 @@ class Web2Docker(object):
 
     @staticmethod
     def to_json(data: Dict, *args, **kwargs) -> AnyStr:
-        return js.dumps(data)
+        return sdt_json.dumps(data)
 
     @staticmethod
     def from_json(string: AnyStr, *args, **kwargs) -> Dict:

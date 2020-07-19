@@ -1,4 +1,4 @@
-import simplejson
+import ujson as sdt_json
 from django.contrib.auth.views import LoginView
 from django.http import HttpResponse
 from django.shortcuts import render
@@ -29,7 +29,7 @@ class ApiEndpoint(LoginView, ProtectedResourceView):
                 user=request.resource_owner.username,
                 ip=request.META["REMOTE_ADDR"],
             )
-            return HttpResponse(simplejson.dumps(resp), content_type="application/json")
+            return HttpResponse(sdt_json.dumps(resp), content_type="application/json")
 
         else:
             return HttpResponse(status=401)

@@ -3,11 +3,10 @@
 
 import json as sys_json
 from os import environ
-from typing import AnyStr
-from typing import Dict
+from typing import AnyStr, Dict
 
 import docker
-import simplejson as sip_json
+import ujson as sdt_json
 
 
 def load_json(data: AnyStr = None, fp=None, *args, **kwargs):
@@ -17,9 +16,9 @@ def load_json(data: AnyStr = None, fp=None, *args, **kwargs):
 
 
 def dump_json(obj: Dict, fp=None, *args, **kwargs):
-    if fp: return sip_json.dump(obj, fp, *args, **kwargs)
+    if fp: return sdt_json.dump(obj, fp, *args, **kwargs)
 
-    return sip_json.dumps(obj, *args, **kwargs)
+    return sdt_json.dumps(obj, *args, **kwargs)
 
 
 class _Json(object):
